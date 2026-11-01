@@ -9,34 +9,28 @@ Her gün bir küre, her küre bir anı. Günün duygularını oranlarıyla seçi
 - **Dolu bir yıl örneği.** Giriş ekranından ya da menüden, gerçek veriye dokunmadan 365 küresi dolu bir yılı gezebilirsin.
 - **Birden fazla hesap ve "Birlikte" görünümü.** Her hesap kendi hayvan avatarını seçer. Aynı ayı yan yana görebilirsiniz.
 
-Uygulama bu repodan GitHub Pages ile yayınlanır. Veriler (küreler, notlar, fotoğraflar) **ayrı ve gizli bir repoda** durur. Uygulama o repoya, senin oluşturduğun bir anahtarla doğrudan tarayıcıdan yazar. Sunucu, veritabanı ya da hesap ücreti yoktur.
+Uygulama bu repodan GitHub Pages ile yayınlanır. Veriler (küreler, notlar, fotoğraflar) **aynı repoda, ayrı bir `veri` dalında** durur. Böylece her kayıt siteyi yeniden derletmez. Uygulama bu dala, senin oluşturduğun bir anahtarla doğrudan tarayıcıdan yazar. Sunucu, veritabanı ya da hesap ücreti yoktur.
+
+> **Gizlilik:** Repo herkese açık (public) olduğu sürece `veri` dalındaki notlar ve fotoğraflar da herkese açıktır. Repoyu adını bilen herkes görebilir. Gizli tutmak istersen ya repoyu private yapıp GitHub Pro ile Pages'i kullan, ya da giriş ekranındaki "Veri reposu" alanına ayrı bir private repo yaz.
 
 ## Kurulum (bir kez)
 
-### 1. Gizli veri reposu
-GitHub'da yeni bir repo aç: `ani-kureleri-veri`. **Private** seç ve "Add a README file" kutusunu işaretle.
-
-### 2. Anahtar (fine-grained token)
+### 1. Anahtar (fine-grained token)
 1. GitHub › Settings › Developer settings › Personal access tokens › **Fine-grained tokens** › Generate new token
-2. **Expiration:** istediğin süre (dolunca yenisini girmen yeterli)
-3. **Repository access:** *Only select repositories* › `ani-kureleri-veri`
-4. **Permissions › Repository permissions › Contents:** *Read and write*
-5. Oluşan `github_pat_…` anahtarını kopyala.
+2. **Repository access:** *Only select repositories* › `DuyguMoodTracker`
+3. **Permissions › Repository permissions › Contents:** *Read and write*
+4. Oluşan `github_pat_…` anahtarını kopyala. Anahtar kodda durmaz, sadece senin tarayıcında saklanır.
 
-Bu anahtar yalnızca veri reposuna erişebilir. Uygulamanın kodu bu açık repoda olsa da anahtar kodda durmaz, sadece senin tarayıcında saklanır.
+### 2. GitHub Pages
+Settings › Pages › Deploy from a branch › `main` / `(root)`. Uygulama `https://koloboros.github.io/DuyguMoodTracker/` adresinde açılır.
 
-### 3. GitHub Pages
-Bu repoda: Settings › Pages › *Build and deployment* › Source: **Deploy from a branch** › Branch: `main` / `(root)` › Save.
-
-Bir iki dakika sonra uygulama `https://koloboros.github.io/DuyguMoodTracker/` adresinde açılır.
-
-### 4. İlk giriş
-Adresi aç, anahtarı ve veri reposunu (`koloboros/ani-kureleri-veri`) gir, sonra hesabını oluştur. Telefonda da aynı adımları bir kez yapman yeterli. Telefonda tarayıcının "Ana ekrana ekle" seçeneğiyle uygulama gibi açabilirsin.
+### 3. İlk giriş
+Adresi aç, anahtarı gir (veri reposu `Koloboros/DuyguMoodTracker` olarak hazır gelir), hesabını oluştur. `veri` dalı yoksa uygulama onu kendisi açar. Telefonda tarayıcının "Ana ekrana ekle" seçeneğiyle uygulama gibi açabilirsin.
 
 ## Yeni hesap
 Sağ üstteki hesap menüsünden **Yeni hesap oluştur**. Aynı anahtarla girilir, bir isim ve hayvan seçilir. İki hesap olunca Ay görünümünde **Birlikte** seçeneği belirir.
 
-## Veri düzeni (gizli repoda)
+## Veri düzeni (`veri` dalında)
 ```
 profiles.json                       hesaplar
 entries/<hesap>/<yıl>.json          günlük küreler, notlar

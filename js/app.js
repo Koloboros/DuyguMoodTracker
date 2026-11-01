@@ -299,7 +299,7 @@ function loading() {
 function viewLogin(error) {
   const tokenIn = h('input', { id: 'tok', type: 'password', autocomplete: 'off', placeholder: 'github_pat_…', required: true });
   const repoIn = h('input', { id: 'repo', type: 'text', placeholder: 'kullanıcı/repo', required: true });
-  repoIn.value = LS.get('repo') || 'koloboros/ani-kureleri-veri';
+  repoIn.value = LS.get('repo') || 'Koloboros/DuyguMoodTracker';
   const err = h('p', { class: 'err', role: 'alert' }, error || '');
   const btn = h('button', { class: 'btn big gold', type: 'submit' }, 'Bahçeye gir');
   const form = h('form', { class: 'card login', onSubmit: async e => {
@@ -326,9 +326,8 @@ function viewLogin(error) {
     h('button', { type: 'button', class: 'linkbtn demo-link', onClick: enterDemo }, 'Önce dolu bir yıl örneğine göz at'),
     h('details', { class: 'help' }, h('summary', null, 'Anahtar nedir, nereden alınır?'),
       h('ol', null,
-        h('li', null, 'GitHub’da gizli (private) bir veri reposu aç; örneğin ', h('code', null, 'ani-kureleri-veri'), '.'),
-        h('li', null, 'Settings › Developer settings › Fine-grained tokens › Generate new token.'),
-        h('li', null, 'Repository access: yalnızca o veri reposu. Permissions › Contents: Read and write.'),
+        h('li', null, 'GitHub › Settings › Developer settings › Fine-grained tokens › Generate new token.'),
+        h('li', null, 'Repository access: yalnızca ', h('code', null, 'DuyguMoodTracker'), '. Permissions › Contents: Read and write.'),
         h('li', null, 'Oluşan ', h('code', null, 'github_pat_…'), ' anahtarını buraya yapıştır. Anahtar sadece bu cihazda saklanır.')
       ))
   );

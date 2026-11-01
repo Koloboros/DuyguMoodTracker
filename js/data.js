@@ -1,10 +1,12 @@
-// Veri katmanı: her şey kullanıcının gizli veri reposunda, GitHub Contents API ile.
+// Veri katmanı: GitHub Contents API ile repodaki ayrı bir veri dalında ("veri") saklanır.
+// Veriler sitenin yayınlandığı main dalından ayrı durur, böylece her kayıt siteyi yeniden derletmez.
 //
 // profiles.json                      → { profiles: [{ id, name, animal, createdAt }] }
 // entries/<profilId>/<yıl>.json      → { "2026-11-12": { emotions, note, core, photo, caption, updatedAt } }
 // photos/<profilId>/<tarih>-<ts>.jpg → küçültülmüş fotoğraflar
 
 const API = 'https://api.github.com';
+export const DATA_BRANCH = 'veri';
 
 function b64encodeUtf8(str) {
   const bytes = new TextEncoder().encode(str);
@@ -25,9 +27,10 @@ export class GitHubError extends Error {
 }
 
 export class Repo {
-  constructor(token, repo) {
+  constructor(token, repo, branch = DATA_BRANCH) {
     this.token = token;
     this.repo = repo;
+    this.branch = branch;
   }
 
   async req(path, { method = 'GET', body, accept } = {}) {
@@ -53,11 +56,24 @@ export class Repo {
     if (!res.ok) throw new GitHubError('GitHub beklenmedik bir yanıt verdi (' + res.status + ').', res.status);
     const info = await res.json();
     if (info.permissions && !info.permissions.push) throw new GitHubError('Bu anahtar repoyu okuyabiliyor ama yazamıyor. Contents iznini "Read and write" yap.', 403);
+    await this.ensureBranch(info.default_branch || 'main');
     return info;
   }
 
+  // Veri dalı yoksa varsayılan daldan oluşturur
+  async ensureBranch(base) {
+    const b = await this.req(`/branches/${encodeURIComponent(this.branch)}`);
+    if (b.ok) return;
+    if (b.status !== 404) throw new GitHubError('Veri dalı kontrol edilemedi (' + b.status + ').', b.status);
+    const ref = await this.req(`/git/ref/heads/${encodeURIComponent(base)}`);
+    if (!ref.ok) throw new GitHubError('Repoda henüz hiç commit yok; önce bir README ekle.', ref.status);
+    const { object } = await ref.json();
+    const res = await this.req('/git/refs', { method: 'POST', body: { ref: `refs/heads/${this.branch}`, sha: object.sha } });
+    if (!res.ok && res.status !== 422) throw new GitHubError('Veri dalı oluşturulamadı (' + res.status + ').', res.status);
+  }
+
   async getJSON(path) {
-    const res = await this.req(`/contents/${encPath(path)}`);
+    const res = await this.req(`/contents/${encPath(path)}?ref=${encodeURIComponent(this.branch)}`);
     if (res.status === 404) return { data: null, sha: null };
     if (!res.ok) throw new GitHubError('Veri okunamadı (' + res.status + ').', res.status);
     const j = await res.json();
@@ -65,7 +81,7 @@ export class Repo {
   }
 
   async putRaw(path, b64, sha, message) {
-    const body = { message, content: b64 };
+    const body = { message, content: b64, branch: this.branch };
     if (sha) body.sha = sha;
     const res = await this.req(`/contents/${encPath(path)}`, { method: 'PUT', body });
     if (res.status === 409 || res.status === 422) throw new GitHubError('conflict', 409);
@@ -79,16 +95,16 @@ export class Repo {
   }
 
   async getBlob(path) {
-    const res = await this.req(`/contents/${encPath(path)}`, { accept: 'application/vnd.github.raw' });
+    const res = await this.req(`/contents/${encPath(path)}?ref=${encodeURIComponent(this.branch)}`, { accept: 'application/vnd.github.raw' });
     if (!res.ok) throw new GitHubError('Fotoğraf yüklenemedi (' + res.status + ').', res.status);
     return res.blob();
   }
 
   async remove(path, message) {
-    const meta = await this.req(`/contents/${encPath(path)}`);
+    const meta = await this.req(`/contents/${encPath(path)}?ref=${encodeURIComponent(this.branch)}`);
     if (!meta.ok) return;
     const { sha } = await meta.json();
-    await this.req(`/contents/${encPath(path)}`, { method: 'DELETE', body: { message, sha } });
+    await this.req(`/contents/${encPath(path)}`, { method: 'DELETE', body: { message, sha, branch: this.branch } });
   }
 }
 
