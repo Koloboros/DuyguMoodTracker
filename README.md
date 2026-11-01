@@ -11,7 +11,7 @@ Her gün bir küre, her küre bir anı. Günün duygularını oranlarıyla seçi
 
 Uygulama bu repodan GitHub Pages ile yayınlanır. Veriler (küreler, notlar, fotoğraflar) **aynı repoda, ayrı bir `veri` dalında** durur. Böylece her kayıt siteyi yeniden derletmez. Uygulama bu dala, senin oluşturduğun bir anahtarla doğrudan tarayıcıdan yazar. Sunucu, veritabanı ya da hesap ücreti yoktur.
 
-> **Gizlilik:** Repo herkese açık (public) olduğu sürece `veri` dalındaki notlar ve fotoğraflar da herkese açıktır. Repoyu adını bilen herkes görebilir. Gizli tutmak istersen ya repoyu private yapıp GitHub Pro ile Pages'i kullan, ya da giriş ekranındaki "Veri reposu" alanına ayrı bir private repo yaz.
+> **Gizlilik:** Repo herkese açık (public) olduğu sürece `veri` dalındaki notlar ve fotoğraflar da herkese açıktır. Repoyu adını bilen herkes görebilir. Gizli tutmak istersen ya repoyu private yapıp GitHub Pro ile Pages'i kullan.
 
 ## Kurulum (bir kez)
 
@@ -25,7 +25,7 @@ Uygulama bu repodan GitHub Pages ile yayınlanır. Veriler (küreler, notlar, fo
 Settings › Pages › Deploy from a branch › `main` / `(root)`. Uygulama `https://koloboros.github.io/DuyguMoodTracker/` adresinde açılır.
 
 ### 3. İlk giriş
-Adresi aç, anahtarı gir (veri reposu `Koloboros/DuyguMoodTracker` olarak hazır gelir), hesabını oluştur. `veri` dalı yoksa uygulama onu kendisi açar. Telefonda tarayıcının "Ana ekrana ekle" seçeneğiyle uygulama gibi açabilirsin.
+Adresi aç, anahtarı gir ve hesabını oluştur. Uygulama verilerin hangi repoda olduğunu adresten kendisi anlar. `veri` dalı yoksa uygulama onu kendisi açar. Telefonda tarayıcının "Ana ekrana ekle" seçeneğiyle uygulama gibi açabilirsin.
 
 ## Yeni hesap
 Sağ üstteki hesap menüsünden **Yeni hesap oluştur**. Aynı anahtarla girilir, bir isim ve hayvan seçilir. İki hesap olunca Ay görünümünde **Birlikte** seçeneği belirir.

@@ -33,6 +33,13 @@ const MONTH_LINES = [
 const SEASON_TINT = { winter: '#E6EEF6', spring: '#FBE4EA', summer: '#FFF1C9', autumn: '#F8E0C8' };
 
 const pad = n => String(n).padStart(2, '0');
+
+// Veriler uygulamanın kendi reposunda tutulur. GitHub Pages adresinden (kullanıcı.github.io/Repo) çıkarılır.
+const DATA_REPO = (() => {
+  const m = location.hostname.match(/^([^.]+)\.github\.io$/);
+  const name = location.pathname.split('/').filter(Boolean)[0];
+  return m && name ? `${m[1]}/${name}` : 'Koloboros/DuyguMoodTracker';
+})();
 const ymd = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 const parseYmd = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
 const today = () => ymd(new Date());
@@ -298,17 +305,15 @@ function loading() {
 
 function viewLogin(error) {
   const tokenIn = h('input', { id: 'tok', type: 'password', autocomplete: 'off', placeholder: 'github_pat_…', required: true });
-  const repoIn = h('input', { id: 'repo', type: 'text', placeholder: 'kullanıcı/repo', required: true });
-  repoIn.value = LS.get('repo') || 'Koloboros/DuyguMoodTracker';
   const err = h('p', { class: 'err', role: 'alert' }, error || '');
   const btn = h('button', { class: 'btn big gold', type: 'submit' }, 'Bahçeye gir');
   const form = h('form', { class: 'card login', onSubmit: async e => {
     e.preventDefault();
     btn.disabled = true; btn.textContent = 'Kapı açılıyor…'; err.textContent = '';
-    const repo = new Repo(tokenIn.value.trim(), repoIn.value.trim().replace(/^https?:\/\/github\.com\//, '').replace(/\/$/, ''));
+    const repo = new Repo(tokenIn.value.trim(), DATA_REPO);
     try {
       await repo.check();
-      LS.set('token', repo.token); LS.set('repo', repo.repo);
+      LS.set('token', repo.token);
       S.store = new Store(repo);
       await S.store.loadProfiles();
       route();
@@ -321,7 +326,6 @@ function viewLogin(error) {
     h('h1', null, 'Anı Küreleri'),
     h('p', { class: 'lead' }, 'Her gün bir küre, her küre bir anı. Devam etmek için anahtarını gir; bu cihaz seni hatırlar.'),
     h('label', { for: 'tok' }, 'Anahtar'), tokenIn,
-    h('label', { for: 'repo' }, 'Veri reposu'), repoIn,
     err, btn,
     h('button', { type: 'button', class: 'linkbtn demo-link', onClick: enterDemo }, 'Önce dolu bir yıl örneğine göz at'),
     h('details', { class: 'help' }, h('summary', null, 'Anahtar nedir, nereden alınır?'),
@@ -766,9 +770,9 @@ async function viewDay(date) {
 
 async function route() {
   if (!S.store) {
-    const token = LS.get('token'), repo = LS.get('repo');
-    if (!token || !repo) return viewLogin();
-    S.store = new Store(new Repo(token, repo));
+    const token = LS.get('token');
+    if (!token) return viewLogin();
+    S.store = new Store(new Repo(token, DATA_REPO));
     app.replaceChildren(h('div', { class: 'wrap center' }, loading()));
     try {
       await S.store.repo.check();
