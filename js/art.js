@@ -10,9 +10,37 @@ export const EMOTIONS = [
   { id: 'anx', label: 'Kaygı', c: '#F2A672', l: '#FCDCC4', s: '#C77840' },
   { id: 'envy', label: 'Kıskançlık', c: '#4FA59A', l: '#A8DDD5', s: '#33786F' },
   { id: 'emb', label: 'Utanç', c: '#E2919F', l: '#F8D0D7', s: '#B4657A' },
-  { id: 'ennui', label: 'Can sıkıntısı', c: '#8A6A9E', l: '#CDB9DA', s: '#5F4672' }
+  { id: 'ennui', label: 'Can sıkıntısı', c: '#8A6A9E', l: '#CDB9DA', s: '#5F4672' },
+  { id: 'love', label: 'Sevgi', c: '#D9577A', l: '#F9C4D2', s: '#A93A5C' },
+  { id: 'calm', label: 'Huzur', c: '#7FCFB8', l: '#D5F2E8', s: '#4E9F88' },
+  { id: 'hope', label: 'Umut', c: '#8EC9F0', l: '#DDF0FC', s: '#5A9BC8' },
+  { id: 'excite', label: 'Heyecan', c: '#FF8A5B', l: '#FFD3BE', s: '#D9603A' },
+  { id: 'longing', label: 'Özlem', c: '#9AA3D9', l: '#DDE1F6', s: '#6D76AE' },
+  { id: 'tired', label: 'Yorgunluk', c: '#A89BA6', l: '#E4DDE2', s: '#7D6F7B' }
 ];
 export const EMO = Object.fromEntries(EMOTIONS.map(e => [e.id, e]));
+
+// Kullanıcının eklediği duygular (profiles.json'da saklanır) EMO'ya kaydedilir.
+export const CUSTOM_FACES = [
+  { id: 'joy', label: 'Gülümseyen' }, { id: 'calm', label: 'Sakin' }, { id: 'love', label: 'Âşık' },
+  { id: 'excite', label: 'Coşkulu' }, { id: 'hope', label: 'Umutlu' }, { id: 'sad', label: 'Hüzünlü' },
+  { id: 'fear', label: 'Şaşkın' }, { id: 'anger', label: 'Kızgın' }, { id: 'envy', label: 'Düşünceli' }, { id: 'tired', label: 'Uykulu' }
+];
+export const SWATCHES = ['#F2C14E', '#FF8A5B', '#D9577A', '#E2919F', '#C98A5A', '#8DB580', '#7FCFB8', '#4FA59A', '#8EC9F0', '#6C8EBF', '#9AA3D9', '#A88BC7', '#8A6A9E', '#A89BA6'];
+
+function mix(hex, target, t) {
+  const a = parseInt(hex.slice(1), 16), b = parseInt(target.slice(1), 16);
+  const ch = sh => Math.round(((a >> sh) & 255) * (1 - t) + ((b >> sh) & 255) * t);
+  return '#' + [16, 8, 0].map(sh => ch(sh).toString(16).padStart(2, '0')).join('');
+}
+
+export function registerCustom(list) {
+  for (const k of Object.keys(EMO)) if (EMO[k].custom) delete EMO[k];
+  for (const c of list || []) {
+    if (!c || !c.id || !/^#[0-9a-f]{6}$/i.test(c.c || '')) continue;
+    EMO[c.id] = { id: c.id, label: c.label, c: c.c, l: mix(c.c, '#FFFFFF', .62), s: mix(c.c, '#2E1D3A', .25), face: c.face || 'joy', custom: true };
+  }
+}
 
 export const ANIMALS = [
   { id: 'cat', label: 'Kedi' }, { id: 'fox', label: 'Tilki' }, { id: 'rabbit', label: 'Tavşan' },
@@ -76,7 +104,18 @@ const FACES = {
     `<path d="M77 44 C74 49 74 52 77 53 C80 52 80 49 77 44Z" fill="#8DB4E2"/>`,
   envy: () => eye(38, 60, 'side') + eye(62, 60, 'side') + stroke('M43 77 Q53 82 60 74') + stroke('M30 49 L43 51', 2.6) + stroke('M57 51 L70 48', 2.6),
   emb: () => eye(38, 61, 'closed') + eye(62, 61, 'closed') + blush(.8, 8) + stroke('M45 76 Q50 80 55 76', 2.6),
-  ennui: body => eye(38, 61, 'lid', body) + eye(62, 61, 'lid', body) + stroke('M43 78 L57 78')
+  ennui: body => eye(38, 61, 'lid', body) + eye(62, 61, 'lid', body) + stroke('M43 78 L57 78'),
+  love: () => heart(38, 60, 1.35, '#C2264E') + heart(62, 60, 1.35, '#C2264E') + `<circle cx="35.5" cy="56" r="1.6" fill="#fff"/><circle cx="59.5" cy="56" r="1.6" fill="#fff"/>` +
+    `<path d="M40 72 Q50 85 60 72 Q50 77 40 72Z" fill="#7A2E3A"/>` + blush(.6),
+  calm: () => stroke('M32 60 Q38 65 44 60', 2.8) + stroke('M56 60 Q62 65 68 60', 2.8) + stroke('M44 75 Q50 80 56 75', 2.6) + blush(.45),
+  hope: () => `<ellipse cx="38" cy="59" rx="6.5" ry="8" fill="${INK}"/><ellipse cx="62" cy="59" rx="6.5" ry="8" fill="${INK}"/>
+    <circle cx="36" cy="55" r="3" fill="#fff"/><circle cx="60" cy="55" r="3" fill="#fff"/><circle cx="40" cy="56" r="1.2" fill="#fff"/><circle cx="64" cy="56" r="1.2" fill="#fff"/>` +
+    stroke('M43 75 Q50 81 57 75', 2.6) + blush(.4),
+  excite: () => star(38, 60, 8, INK) + star(62, 60, 8, INK) + `<circle cx="36.5" cy="58" r="1.5" fill="#fff"/><circle cx="60.5" cy="58" r="1.5" fill="#fff"/>` +
+    `<path d="M38 71 Q50 91 62 71Z" fill="#7A2E3A"/><ellipse cx="50" cy="80" rx="6" ry="3.6" fill="#F28CA8"/>` + blush(.55),
+  longing: () => `<ellipse cx="38" cy="61" rx="6" ry="7.5" fill="${INK}"/><ellipse cx="62" cy="61" rx="6" ry="7.5" fill="${INK}"/><circle cx="36" cy="57.5" r="2.5" fill="#fff"/><circle cx="60" cy="57.5" r="2.5" fill="#fff"/>` +
+    stroke('M30 50 L43 48', 2.4) + stroke('M57 48 L70 50', 2.4) + stroke('M44 77 Q50 80 56 77', 2.4) + `<path d="M68 69 C66 73 66 76 68.5 77 C71 76 71 73 68 69Z" fill="#8DB4E2"/>`,
+  tired: body => eye(38, 61, 'lid', body) + eye(62, 61, 'lid', body) + stroke('M32 68 Q38 71 44 68', 1.6) + stroke('M56 68 Q62 71 68 68', 1.6) + `<ellipse cx="50" cy="79" rx="3.6" ry="4.6" fill="#7A2E3A"/>`
 };
 
 const ACC = {
@@ -92,17 +131,25 @@ const ACC = {
   anx: () => `<path d="M50 24 m-7 0 a7 7 0 1 1 7 7 a3.5 3.5 0 1 1 -3.5 -3.5" stroke="${INK}" stroke-width="2.2" fill="none" stroke-linecap="round"/>` + stroke('M34 18 l-4 -4', 2.2) + stroke('M66 18 l4 -4', 2.2),
   envy: () => star(72, 21, 8, '#FFE08A') + star(82, 32, 4, '#FFF4C2'),
   emb: () => heart(70, 22, 1.4, '#FF8FAE') + heart(80, 12, .8, '#FFC2D2'),
-  ennui: () => stroke('M64 16 h9 l-9 10 h9', 2.4) + stroke('M77 5 h6 l-6 7 h6', 2)
+  ennui: () => stroke('M64 16 h9 l-9 10 h9', 2.4) + stroke('M77 5 h6 l-6 7 h6', 2),
+  love: () => heart(68, 20, 1.4, '#FF7A9A') + heart(80, 32, .8, '#FFB3C6') + heart(30, 20, 1, '#FF9DB5'),
+  calm: () => `<path d="M72 6 a12 12 0 1 0 9 20 a9.5 9.5 0 1 1 -9 -20z" fill="#FFE9A8"/>` + star(58, 12, 3.5, '#FFF4C2') + `<ellipse cx="38" cy="28" rx="7" ry="3.2" fill="#A9D68F" transform="rotate(-30 38 28)"/>`,
+  hope: () => `<path d="M30 33 A20 20 0 0 1 70 33" stroke="#F7A8C4" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M35 33 A15 15 0 0 1 65 33" stroke="#FFE08A" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M40 33 A10 10 0 0 1 60 33" stroke="#A8D8F0" stroke-width="4" fill="none" stroke-linecap="round"/>`,
+  excite: () => `<rect x="24" y="18" width="5" height="3" rx="1" fill="#FFD25E" transform="rotate(30 26 19)"/><rect x="70" y="14" width="5" height="3" rx="1" fill="#7FCFB8" transform="rotate(-20 72 15)"/><rect x="40" y="10" width="4" height="3" rx="1" fill="#F28CA8" transform="rotate(50 42 11)"/><rect x="60" y="24" width="4" height="3" rx="1" fill="#A8D8F0" transform="rotate(10 62 25)"/>` + star(52, 18, 6, '#FFE08A') + star(80, 30, 3.5, '#FFF4C2'),
+  longing: () => `<path transform="translate(66 8) rotate(30)" d="M6 0 C11 5 11 13 6 18 C1 13 1 5 6 0Z" fill="#F7B8C8"/><path transform="translate(26 18) rotate(-40)" d="M5 0 C9 4 9 10 5 14 C1 10 1 4 5 0Z" fill="#DDE1F6"/>`,
+  tired: () => `<path d="M30 38 C34 26 48 18 62 16 C70 15 76 20 80 12 C79 24 72 34 70 37 Z" fill="#8E9AD6"/><path d="M33 34 C40 30 56 28 69 33" stroke="#C6CCF0" stroke-width="3" fill="none"/><circle cx="81" cy="10" r="4.6" fill="#F4F0FF"/>`
 };
 
 function emotionSVG(id) {
   const e = EMO[id], g = uid();
+  const face = FACES[e.face || id] || FACES.joy;
+  const acc = e.custom ? () => star(73, 21, 7.5, e.l) + star(83, 33, 3.6, '#FFF4C2') + star(28, 24, 4, e.l) : ACC[id];
   return `<svg viewBox="0 0 100 104" xmlns="http://www.w3.org/2000/svg">
     <defs><radialGradient id="${g}" cx="36%" cy="30%" r="78%"><stop offset="0" stop-color="${e.l}"/><stop offset=".55" stop-color="${e.c}"/><stop offset="1" stop-color="${e.s}"/></radialGradient></defs>
     <circle cx="50" cy="65" r="39" fill="${e.c}" opacity=".18"/>
     <circle cx="50" cy="65" r="33" fill="url(#${g})"/>
     <ellipse cx="37" cy="48" rx="10" ry="5.5" fill="#fff" opacity=".5" transform="rotate(-28 37 48)"/>
-    ${FACES[id](e.c)}${ACC[id]()}
+    ${face(e.c)}${acc()}
   </svg>`;
 }
 
@@ -189,37 +236,81 @@ function monthSVG(m) {
 // ---------- süsler ----------
 
 const SEASON = {
-  winter: { stem: '#8FA79B', leaf: '#A9C4B8', leaf2: '#C3D8CE', petal: '#FFFFFF', center: '#BFD6F2', berry: '#D9535F' },
-  spring: { stem: '#7FA06A', leaf: '#9CCB86', leaf2: '#B8DDA4', petal: '#F7A8C4', center: '#FFE08A', berry: '#FBC7D8' },
-  summer: { stem: '#6E9F5E', leaf: '#8DC27A', leaf2: '#A9D68F', petal: '#FFE08A', center: '#F2A33A', berry: '#F28CA8' },
-  autumn: { stem: '#9A6B45', leaf: '#E59A4E', leaf2: '#D9653E', petal: '#F2C14E', center: '#C46A2E', berry: '#C9534A' }
+  winter: { stem: '#8FA79B', leaf: '#A9C4B8', leaf2: '#C8DCD2', petal: '#FFFFFF', center: '#BFD6F2', rose: '#E9EEF8', roseDark: '#B9C6DE', bell: '#DDE8F6', berry: '#D9535F' },
+  spring: { stem: '#7FA06A', leaf: '#9CCB86', leaf2: '#BFE0AA', petal: '#F7A8C4', center: '#FFE08A', rose: '#F6B6CB', roseDark: '#D9789A', bell: '#C6B4F0', berry: '#FBC7D8' },
+  summer: { stem: '#6E9F5E', leaf: '#8DC27A', leaf2: '#B3DB9C', petal: '#FFE08A', center: '#F2A33A', rose: '#FF9DA8', roseDark: '#E0606F', bell: '#A8D8F0', berry: '#F28CA8' },
+  autumn: { stem: '#9A6B45', leaf: '#E59A4E', leaf2: '#D9653E', petal: '#F2C14E', center: '#C46A2E', rose: '#E9876A', roseDark: '#B8513A', bell: '#F2C9A0', berry: '#C9534A' }
 };
 
-function leaf(x, y, rot, fill) {
-  return `<path transform="translate(${x} ${y}) rotate(${rot})" d="M0 0 C4 -5 11 -5 14 0 C11 5 4 5 0 0Z" fill="${fill}"/>`;
+function leaf(x, y, rot, fill, len = 14) {
+  const k = len / 14;
+  return `<path transform="translate(${x} ${y}) rotate(${rot}) scale(${k})" d="M0 0 C4 -5 11 -5 14 0 C11 5 4 5 0 0Z" fill="${fill}"/><path transform="translate(${x} ${y}) rotate(${rot}) scale(${k})" d="M1 0 H12" stroke="#fff" stroke-opacity=".35" stroke-width=".8"/>`;
+}
+function rose(cx, cy, r, col, dark) {
+  return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${col}"/>
+    <path d="M${cx - r * .55} ${cy + r * .1} a${r * .55} ${r * .55} 0 1 1 ${r * .55} ${r * .5} a${r * .32} ${r * .32} 0 1 1 ${r * .05} -${r * .62}" stroke="${dark}" stroke-width="${(r / 6).toFixed(1)}" fill="none" stroke-linecap="round"/>
+    <circle cx="${cx - r * .35}" cy="${cy - r * .38}" r="${r * .22}" fill="#fff" opacity=".45"/>`;
+}
+function bud(x, y, rot, col, sepal) {
+  return `<g transform="translate(${x} ${y}) rotate(${rot})"><ellipse cx="0" cy="-4" rx="3" ry="4.6" fill="${col}"/><path d="M-3.4 -1 Q0 2 3.4 -1 L0 3Z" fill="${sepal}"/></g>`;
+}
+function bell(x, y, len, col, stem) {
+  return `<path d="M${x} ${y} V${y + len}" stroke="${stem}" stroke-width="1.2"/><path d="M${x - 4} ${y + len + 6} Q${x - 4} ${y + len - 1} ${x} ${y + len - 1} Q${x + 4} ${y + len - 1} ${x + 4} ${y + len + 6} Q${x + 2} ${y + len + 4} ${x} ${y + len + 6.5} Q${x - 2} ${y + len + 4} ${x - 4} ${y + len + 6}Z" fill="${col}"/>`;
 }
 
 export function vineSVG(season) {
   const s = SEASON[season] || SEASON.spring;
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="160" height="36" viewBox="0 0 160 36">
-    <path d="M0 20 C27 6 53 6 80 20 C107 34 133 34 160 20" stroke="${s.stem}" stroke-width="2" fill="none"/>
-    ${leaf(14, 14, -40, s.leaf)}${leaf(54, 10, 20, s.leaf2)}${leaf(92, 25, 30, s.leaf)}${leaf(140, 28, -20, s.leaf2)}${leaf(66, 14, 200, s.leaf)}
-    ${flower(36, 10, 6, s.petal, s.center)}${flower(118, 29, 5.5, s.petal, s.center)}
-    <circle cx="80" cy="13" r="2.4" fill="${s.berry}"/><circle cx="84" cy="10" r="2" fill="${s.berry}"/><circle cx="152" cy="15" r="2.2" fill="${s.berry}"/>
-    ${star(100, 9, 3.5, '#FFF6D6')}
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="48" viewBox="0 0 200 48">
+    <path d="M0 22 C33 6 67 6 100 22 C133 38 167 38 200 22" stroke="${s.stem}" stroke-width="2.2" fill="none"/>
+    <path d="M58 12 C64 4 72 3 78 6" stroke="${s.stem}" stroke-width="1.4" fill="none"/><path d="M140 32 C146 40 156 42 162 38" stroke="${s.stem}" stroke-width="1.4" fill="none"/>
+    ${bell(26, 15, 10, s.bell, s.stem)}${bell(172, 31, 6, s.bell, s.stem)}${bell(118, 30, 8, s.bell, s.stem)}
+    ${leaf(8, 17, -40, s.leaf)}${leaf(40, 9, 20, s.leaf2)}${leaf(46, 12, 160, s.leaf, 11)}${leaf(86, 16, 30, s.leaf)}${leaf(110, 27, 210, s.leaf2, 12)}${leaf(130, 33, 20, s.leaf)}${leaf(186, 27, -30, s.leaf2)}${leaf(70, 8, -60, s.leaf, 10)}
+    ${rose(100, 22, 8, s.rose, s.roseDark)}
+    ${flower(52, 10, 6.5, s.petal, s.center)}${flower(150, 34, 6, s.petal, s.center)}${flower(80, 6, 4, s.petal, s.center)}${flower(164, 39, 3.8, s.petal, s.center)}
+    ${bud(16, 15, -20, s.rose, s.leaf)}${bud(192, 22, 25, s.rose, s.leaf)}
+    <circle cx="124" cy="24" r="2.4" fill="${s.berry}"/><circle cx="128" cy="21" r="2" fill="${s.berry}"/><circle cx="66" cy="15" r="2" fill="${s.berry}"/>
+    ${star(34, 34, 3.4, '#FFF6D6')}${star(140, 8, 3, '#FFF6D6')}${star(178, 10, 2.2, '#FFE9A8')}
   </svg>`;
 }
 
 export function flourishSVG(season) {
   const s = SEASON[season] || SEASON.spring;
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="150" height="110" viewBox="0 0 150 110">
-    <path d="M4 8 C40 6 56 18 64 38 C70 54 84 62 104 56" stroke="${s.stem}" stroke-width="2.2" fill="none" stroke-linecap="round"/>
-    <path d="M8 6 C10 30 18 46 34 58" stroke="${s.stem}" stroke-width="1.8" fill="none" stroke-linecap="round"/>
-    <path d="M60 30 C66 22 76 18 86 20" stroke="${s.stem}" stroke-width="1.6" fill="none" stroke-linecap="round"/>
-    ${leaf(26, 9, -10, s.leaf)}${leaf(44, 16, 30, s.leaf2)}${leaf(62, 44, 60, s.leaf)}${leaf(80, 58, 10, s.leaf2)}${leaf(12, 28, 70, s.leaf)}${leaf(22, 46, 50, s.leaf2)}${leaf(72, 22, -20, s.leaf2)}
-    ${flower(106, 55, 8, s.petal, s.center)}${flower(88, 20, 5.5, s.petal, s.center)}${flower(36, 60, 5, s.petal, s.center)}
-    <circle cx="52" cy="26" r="2.4" fill="${s.berry}"/><circle cx="56" cy="23" r="2" fill="${s.berry}"/>
-    ${star(122, 34, 5, '#FFF6D6')}${star(132, 70, 3, '#FFE9A8')}
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="190" height="140" viewBox="0 0 190 140">
+    <path d="M4 8 C46 4 66 18 76 42 C84 62 100 74 128 68" stroke="${s.stem}" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+    <path d="M8 6 C8 36 18 58 40 74 C50 82 54 92 50 104" stroke="${s.stem}" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M70 32 C78 22 92 18 106 22" stroke="${s.stem}" stroke-width="1.7" fill="none" stroke-linecap="round"/>
+    <path d="M128 68 C140 66 146 58 144 50 C143 44 136 44 136 50" stroke="${s.stem}" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+    <path d="M22 50 C14 52 10 60 14 66" stroke="${s.stem}" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+    ${bell(96, 46, 12, s.bell, s.stem)}${bell(30, 66, 10, s.bell, s.stem)}
+    ${leaf(26, 8, -10, s.leaf, 16)}${leaf(48, 14, 30, s.leaf2, 16)}${leaf(70, 48, 60, s.leaf, 15)}${leaf(92, 66, 10, s.leaf2, 15)}${leaf(110, 72, -20, s.leaf, 13)}
+    ${leaf(10, 30, 70, s.leaf, 15)}${leaf(20, 52, 50, s.leaf2, 14)}${leaf(36, 76, 40, s.leaf, 14)}${leaf(80, 24, -20, s.leaf2, 13)}${leaf(60, 22, 200, s.leaf, 12)}
+    ${rose(128, 68, 11, s.rose, s.roseDark)}${rose(108, 22, 7.5, s.rose, s.roseDark)}
+    ${flower(50, 104, 7, s.petal, s.center)}${flower(84, 36, 5, s.petal, s.center)}${flower(14, 66, 4.5, s.petal, s.center)}${flower(146, 84, 4.5, s.petal, s.center)}
+    ${bud(40, 30, -30, s.rose, s.leaf)}${bud(136, 50, 20, s.rose, s.leaf)}${bud(64, 88, -10, s.rose, s.leaf)}
+    <circle cx="58" cy="30" r="2.6" fill="${s.berry}"/><circle cx="62" cy="27" r="2.1" fill="${s.berry}"/><circle cx="26" cy="40" r="2" fill="${s.berry}"/>
+    ${star(158, 40, 6, '#FFF6D6')}${star(170, 92, 3.6, '#FFE9A8')}${star(92, 92, 3, '#FFF6D6')}${star(30, 124, 2.6, '#FFE9A8')}
+  </svg>`;
+}
+
+export function dividerSVG(season) {
+  const s = SEASON[season] || SEASON.spring;
+  const side = `<path d="M150 20 C120 20 100 10 70 14 C50 17 34 22 8 20" stroke="${s.stem}" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    ${leaf(130, 18, 190, s.leaf)}${leaf(110, 13, 160, s.leaf2)}${leaf(88, 13, 200, s.leaf)}${leaf(60, 16, 170, s.leaf2, 12)}${leaf(36, 20, 190, s.leaf, 11)}
+    ${flower(76, 12, 4.4, s.petal, s.center)}${flower(44, 19, 3.6, s.petal, s.center)}<circle cx="16" cy="20" r="2.4" fill="${s.berry}"/>${star(100, 28, 2.6, '#FFF6D6')}`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="320" height="40" viewBox="0 0 320 40">
+    ${side}<g transform="translate(320 0) scale(-1 1)">${side}</g>${rose(160, 20, 10, s.rose, s.roseDark)}${star(160, 4, 3.4, '#FFE9A8')}
+  </svg>`;
+}
+
+export function petalSVG(color) {
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 24"><path d="M10 0 C17 6 18 15 10 24 C2 15 3 6 10 0Z" fill="${color}"/><path d="M10 3 V20" stroke="#fff" stroke-opacity=".5" stroke-width="1"/></svg>`;
+}
+
+export function butterflySVG(a, b) {
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 32">
+    <g class="wl"><path d="M19 16 C10 2 0 4 2 12 C3 17 10 18 19 17Z" fill="${a}"/><path d="M19 17 C10 20 6 28 11 30 C15 31 18 24 19 18Z" fill="${b}"/><circle cx="8" cy="10" r="2" fill="#fff" opacity=".6"/></g>
+    <g class="wr"><path d="M21 16 C30 2 40 4 38 12 C37 17 30 18 21 17Z" fill="${a}"/><path d="M21 17 C30 20 34 28 29 30 C25 31 22 24 21 18Z" fill="${b}"/><circle cx="32" cy="10" r="2" fill="#fff" opacity=".6"/></g>
+    <rect x="19" y="10" width="2" height="15" rx="1" fill="${INK}"/><path d="M20 10 C18 6 16 5 15 4 M20 10 C22 6 24 5 25 4" stroke="${INK}" stroke-width="1" fill="none" stroke-linecap="round"/>
   </svg>`;
 }
 
@@ -230,6 +321,7 @@ export const svgURL = svg => 'data:image/svg+xml,' + encodeURIComponent(svg.repl
 
 function svgFor(name) {
   if (EMO[name]) return emotionSVG(name);
+  if (/^c-/.test(name)) return emotionSVG('joy');
   if (ANIMAL_SVG[name]) return animalSVG(name);
   if (/^m\d+$/.test(name)) return monthSVG(Number(name.slice(1)));
   throw new Error('Bilinmeyen çizim: ' + name);

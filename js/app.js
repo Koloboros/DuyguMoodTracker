@@ -1,4 +1,5 @@
-import { EMOTIONS, EMO, ANIMALS, ANIMAL, SEASON_OF_MONTH, art, artURL, vineSVG, flourishSVG, STAR_SVG, svgURL } from './art.js';
+import { EMOTIONS, EMO, ANIMALS, ANIMAL, SEASON_OF_MONTH, CUSTOM_FACES, SWATCHES, registerCustom, art, artURL, vineSVG, flourishSVG, dividerSVG, petalSVG, butterflySVG, STAR_SVG, svgURL } from './art.js';
+import { DemoStore, DEMO_YEAR } from './demo.js';
 import { Repo, Store, shrinkPhoto } from './data.js';
 
 // ---------- küçük yardımcılar ----------
@@ -47,6 +48,7 @@ const LS = {
 };
 
 function toast(msg, kind = '') {
+  document.querySelectorAll('.toast').forEach(t => t.remove());
   const t = h('div', { class: 'toast ' + kind, role: 'status' }, msg);
   document.body.append(t);
   requestAnimationFrame(() => t.classList.add('show'));
@@ -94,14 +96,14 @@ function orb(entry, size, mode) {
 }
 
 function emotionTotals(entries) {
-  const t = Object.fromEntries(EMOTIONS.map(e => [e.id, 0]));
+  const t = Object.fromEntries(Object.keys(EMO).map(id => [id, 0]));
   let days = 0;
   for (const e of entries) {
     const em = emoList(e);
     const sum = em.reduce((a, [, w]) => a + w, 0);
     if (!sum) continue;
     days++;
-    for (const [id, w] of em) t[id] += w / sum;
+    for (const [id, w] of em) t[id] = (t[id] || 0) + w / sum;
   }
   return { totals: t, days };
 }
@@ -119,7 +121,7 @@ const app = document.getElementById('app');
 
 const profile = () => S.store && S.store.profiles.find(p => p.id === S.profileId);
 const profileById = id => S.store.profiles.find(p => p.id === id);
-function setProfile(id) { S.profileId = id; LS.set('profile', id); }
+function setProfile(id) { S.profileId = id; if (!S.demo) LS.set('profile', id); }
 function setMode(m) { S.mode = m; LS.set('mode', m); }
 
 // Arka planda süzülen simler (bir kez kurulur)
@@ -132,6 +134,16 @@ function sky() {
     const size = 6 + Math.round(rnd() * 12);
     layer.append(h('span', { style: `left:${(rnd() * 100).toFixed(1)}%;top:${(rnd() * 100).toFixed(1)}%;width:${size}px;height:${size}px;background-image:url("${url}");animation-delay:${(rnd() * 6).toFixed(1)}s;animation-duration:${(3 + rnd() * 4).toFixed(1)}s;--glow:${['#FFE9A8', '#FFD1E3', '#E4D6FF', '#FFFFFF'][i % 4]}` }));
   }
+  const season = SEASON_OF_MONTH[new Date().getMonth()];
+  const petalCols = { winter: ['#FFFFFF', '#E3ECF8', '#F7D9E3'], spring: ['#F7A8C4', '#FBC7D8', '#FFE3EC'], summer: ['#FFE08A', '#FFC2D2', '#FFFFFF'], autumn: ['#E59A4E', '#D9653E', '#F2C14E'] }[season];
+  for (let i = 0; i < 16; i++) {
+    const size = 10 + Math.round(rnd() * 10);
+    layer.append(h('b', { class: 'petal', style: `left:${(rnd() * 100).toFixed(1)}%;width:${size}px;height:${Math.round(size * 1.2)}px;background-image:url("${svgURL(petalSVG(petalCols[i % 3]))}");animation-delay:-${(rnd() * 22).toFixed(1)}s;animation-duration:${(16 + rnd() * 14).toFixed(1)}s;--sway:${(30 + rnd() * 60).toFixed(0)}px` }));
+  }
+  [['#F7A8C4', '#C6B4F0'], ['#FFE08A', '#F2A672'], ['#A8D8F0', '#C6B4F0']].forEach(([a, b], i) => {
+    layer.append(h('em', { class: 'butterfly b' + i }));
+    layer.lastChild.innerHTML = butterflySVG(a, b);
+  });
   for (let i = 0; i < 60; i++) {
     layer.append(h('i', { style: `left:${(rnd() * 100).toFixed(1)}%;top:${(rnd() * 100).toFixed(1)}%;animation-delay:${(rnd() * 5).toFixed(1)}s` }));
   }
@@ -158,9 +170,9 @@ function vineStrip(season, cls = 'vine') {
 function shell(content, active) {
   const p = profile();
   const nav = h('nav', { class: 'tabs', 'aria-label': 'Görünüm' },
-    h('a', { href: '#/yil/' + new Date().getFullYear(), class: 'btn' + (active === 'yil' ? ' on' : '') }, 'Yıl'),
-    h('a', { href: '#/ay/' + today().slice(0, 7), class: 'btn' + (active === 'ay' ? ' on' : '') }, 'Ay'),
-    h('a', { href: '#/gun/' + today(), class: 'btn' + (active === 'gun' ? ' on' : '') }, 'Bugün')
+    h('a', { href: '#/yil/' + (S.demo ? DEMO_YEAR : new Date().getFullYear()), class: 'btn' + (active === 'yil' ? ' on' : '') }, 'Yıl'),
+    h('a', { href: '#/ay/' + (S.demo ? DEMO_YEAR + '-12' : today().slice(0, 7)), class: 'btn' + (active === 'ay' ? ' on' : '') }, 'Ay'),
+    h('a', { href: '#/gun/' + (S.demo ? DEMO_YEAR + '-12-31' : today()), class: 'btn' + (active === 'gun' ? ' on' : '') }, S.demo ? 'Gün' : 'Bugün')
   );
   const menu = h('details', { class: 'menu' },
     h('summary', { class: 'who', 'aria-label': 'Hesap menüsü' }, art(p.animal, 30), h('span', null, p.name),
@@ -172,9 +184,11 @@ function shell(content, active) {
         onClick: () => { setProfile(pr.id); setMode('me'); route(); }
       }, art(pr.animal, 30), pr.name)),
       h('hr'),
-      h('a', { class: 'menu-item', href: '#/profil' }, 'Avatarımı değiştir'),
-      h('a', { class: 'menu-item', href: '#/hesap-olustur' }, 'Yeni hesap oluştur'),
-      h('button', { class: 'menu-item', onClick: logout }, 'Bu cihazdan çık')
+      S.demo ? h('button', { class: 'menu-item', onClick: exitDemo }, 'Örnekten çık') : [
+        h('a', { class: 'menu-item', href: '#/profil' }, 'Profil ve duygularım'),
+        h('button', { class: 'menu-item', onClick: enterDemo }, 'Dolu bir yıl örneği'),
+        h('a', { class: 'menu-item', href: '#/hesap-olustur' }, 'Yeni hesap oluştur'),
+        h('button', { class: 'menu-item', onClick: logout }, 'Bu cihazdan çık')]
     )
   );
 
@@ -183,7 +197,97 @@ function shell(content, active) {
       orb({ emotions: { joy: 1, emb: 1, sad: 1, disgust: 1 } }, 34), h('span', null, 'Anı Küreleri')),
     nav, menu);
   const season = SEASON_OF_MONTH[new Date().getMonth()];
-  app.replaceChildren(vineStrip(season), h('div', { class: 'wrap' }, header, content));
+  const banner = S.demo ? h('div', { class: 'demo-banner', role: 'note' },
+    h('span', null, art('hope', 34), h('span', null, h('strong', null, 'Örnek yıl. '), 'Bu küreler gerçek verin değil; dolu bir yılın nasıl göründüğünü gösterir. Burada yaptığın değişiklikler kaydedilmez.')),
+    h('button', { class: 'btn', onClick: exitDemo }, 'Örnekten çık')) : null;
+  app.replaceChildren(vineStrip(season), h('div', { class: 'wrap' }, header, banner, content));
+}
+
+// ---------- örnek yıl ----------
+
+function enterDemo() {
+  const base = S.store && S.store.profiles.find(p => p.id === S.profileId);
+  S.real = { store: S.store, profileId: S.profileId, mode: S.mode };
+  S.store = new DemoStore(base ? { ...base } : { id: 'ornek', name: 'Duygu', animal: 'fox', custom: [] });
+  S.demo = true;
+  S.profileId = S.store.profiles[0].id;
+  S.mode = 'me';
+  S.drafts.clear();
+  location.hash = '#/yil/' + DEMO_YEAR;
+  route();
+}
+
+function exitDemo() {
+  const real = S.real || {};
+  S.demo = false;
+  S.store = real.store || null;
+  S.profileId = real.profileId || LS.get('profile');
+  S.mode = real.mode || 'me';
+  S.drafts.clear();
+  location.hash = '#/yil/' + new Date().getFullYear();
+  route();
+}
+
+function divider(season) {
+  return h('div', { class: 'divider', 'aria-hidden': 'true', style: `background-image:url("${svgURL(dividerSVG(season))}")` });
+}
+
+// ---------- kendi duygunu ekle ----------
+
+function customOf(p) { return (p && p.custom) || []; }
+
+function emotionDialog(onDone) {
+  let color = SWATCHES[Math.floor(Math.random() * SWATCHES.length)], face = 'joy';
+  const nameIn = h('input', { id: 'cname', type: 'text', maxlength: 22, placeholder: 'ör. Şükran, Merak, Kahve keyfi', required: true, autocomplete: 'off' });
+  const preview = h('div', { class: 'emo-preview' });
+  const swatches = h('div', { class: 'swatches', role: 'radiogroup', 'aria-label': 'Renk' });
+  const faces = h('div', { class: 'faces', role: 'radiogroup', 'aria-label': 'Yüz ifadesi' });
+  const colorIn = h('input', { type: 'color', 'aria-label': 'Başka bir renk', class: 'color-in' });
+  const err = h('p', { class: 'err', role: 'alert' });
+  const paint = () => {
+    registerCustom([...S.store.profiles.flatMap(p => p.custom || []), { id: 'c-onizleme', label: nameIn.value || 'Yeni duygu', c: color, face }]);
+    preview.replaceChildren(art('c-onizleme', 96, { className: 'bob' }), h('strong', null, nameIn.value.trim() || 'Yeni duygu'));
+    swatches.replaceChildren(...SWATCHES.map(c => h('button', { type: 'button', role: 'radio', 'aria-checked': String(c === color), 'aria-label': c, class: 'swatch' + (c === color ? ' on' : ''), style: `background:${c}`, onClick: () => { color = c; paint(); } })), colorIn);
+    faces.replaceChildren(...CUSTOM_FACES.map(f => {
+      registerCustom([...S.store.profiles.flatMap(p => p.custom || []), { id: 'c-yuz-' + f.id, label: f.label, c: color, face: f.id }]);
+      return h('button', { type: 'button', role: 'radio', 'aria-checked': String(f.id === face), class: 'face' + (f.id === face ? ' on' : ''), onClick: () => { face = f.id; paint(); } }, art('c-yuz-' + f.id, 46), h('span', null, f.label));
+    }));
+  };
+  colorIn.value = color;
+  colorIn.addEventListener('input', () => { color = colorIn.value; paint(); });
+  nameIn.addEventListener('input', () => { preview.lastChild.textContent = nameIn.value.trim() || 'Yeni duygu'; });
+  const save = h('button', { type: 'submit', class: 'btn gold' }, 'Duyguyu ekle');
+  const dlg = h('dialog', { class: 'emo-dialog' },
+    h('form', { method: 'dialog', class: 'card', onSubmit: async e => {
+      e.preventDefault();
+      const label = nameIn.value.trim();
+      if (!label) { err.textContent = 'Duyguna bir isim ver.'; return; }
+      const all = [...EMOTIONS, ...Object.values(EMO).filter(x => x.custom && !x.id.startsWith('c-yuz-') && x.id !== 'c-onizleme')];
+      if (all.some(x => x.label.toLocaleLowerCase('tr') === label.toLocaleLowerCase('tr'))) { err.textContent = 'Bu isimde bir duygu zaten var.'; return; }
+      save.disabled = true;
+      try {
+        const p = profile();
+        const id = 'c-' + Date.now().toString(36);
+        await S.store.updateProfile(p.id, { custom: [...customOf(p), { id, label, c: color, face }] });
+        registerCustom(S.store.profiles.flatMap(x => x.custom || []));
+        dlg.close(); dlg.remove();
+        toast(`"${label}" duygularına eklendi`);
+        onDone && onDone(id);
+      } catch (ex) { err.textContent = ex.message; save.disabled = false; }
+    } },
+      h('h2', null, 'Yeni bir duygu'),
+      h('p', { class: 'muted' }, 'İsmini ver, rengini ve yüzünü seç. Sadece senin hesabında görünür.'),
+      preview,
+      h('label', { for: 'cname' }, 'İsim'), nameIn,
+      h('span', { class: 'label' }, 'Renk'), swatches,
+      h('span', { class: 'label' }, 'Yüz'), faces,
+      err,
+      h('div', { class: 'dialog-actions' }, h('button', { type: 'button', class: 'linkbtn', onClick: () => { registerCustom(S.store.profiles.flatMap(x => x.custom || [])); dlg.close(); dlg.remove(); } }, 'Vazgeç'), save)
+    ));
+  document.body.append(dlg);
+  paint();
+  dlg.showModal();
+  nameIn.focus();
 }
 
 function loading() {
@@ -219,6 +323,7 @@ function viewLogin(error) {
     h('label', { for: 'tok' }, 'Anahtar'), tokenIn,
     h('label', { for: 'repo' }, 'Veri reposu'), repoIn,
     err, btn,
+    h('button', { type: 'button', class: 'linkbtn demo-link', onClick: enterDemo }, 'Önce dolu bir yıl örneğine göz at'),
     h('details', { class: 'help' }, h('summary', null, 'Anahtar nedir, nereden alınır?'),
       h('ol', null,
         h('li', null, 'GitHub’da gizli (private) bir veri reposu aç; örneğin ', h('code', null, 'ani-kureleri-veri'), '.'),
@@ -265,15 +370,33 @@ function viewProfileForm({ editing = false } = {}) {
       route();
     } catch (ex) { err.textContent = ex.message; btn.disabled = false; }
   } },
-    h('h1', null, editing ? 'Avatarını değiştir' : (first ? 'Bahçene hoş geldin' : 'Yeni hesap')),
-    h('p', { class: 'lead' }, editing ? 'İsmini ya da hayvanını değiştirebilirsin.' : 'Bir isim ve seni anlatan bir hayvan seç. Küreler bu hesapta birikecek.'),
+    h('h1', null, editing ? 'Profil ve duygular' : (first ? 'Bahçene hoş geldin' : 'Yeni hesap')),
+    h('p', { class: 'lead' }, editing ? 'İsmini, hayvanını ve kendi duygularını buradan düzenleyebilirsin.' : 'Bir isim ve seni anlatan bir hayvan seç. Küreler bu hesapta birikecek.'),
     h('label', { for: 'pname' }, 'İsim'), nameIn,
     h('span', { class: 'label' }, 'Hayvanın'), grid,
+    editing ? customSection(current) : null,
     err, btn,
     (!first) ? h('a', { href: '#/yil/' + new Date().getFullYear(), class: 'quiet' }, 'Vazgeç') : null
   );
   if (first || !profile()) app.replaceChildren(vineStrip(SEASON_OF_MONTH[new Date().getMonth()]), h('div', { class: 'wrap center' }, form));
   else shell(h('div', { class: 'center' }, form), '');
+}
+
+function customSection(p) {
+  const list = h('div', { class: 'custom-list' });
+  const paint = () => {
+    const cur = profile();
+    registerCustom(S.store.profiles.flatMap(x => x.custom || []));
+    list.replaceChildren(...customOf(cur).map(c => h('div', { class: 'custom-item' },
+      art(c.id, 48), h('strong', null, c.label),
+      h('button', { type: 'button', class: 'linkbtn danger', onClick: async () => {
+        if (!confirm(`"${c.label}" silinsin mi? Bu duyguyla boyanmış eski küreler rengini korur ama listede görünmez.`)) return;
+        try { await S.store.updateProfile(cur.id, { custom: customOf(cur).filter(x => x.id !== c.id) }); paint(); } catch (ex) { toast(ex.message, 'warn'); }
+      } }, 'Sil'))),
+      h('button', { type: 'button', class: 'chip add-chip row', onClick: () => emotionDialog(paint) }, h('span', { class: 'plus', 'aria-hidden': 'true' }, '+'), h('span', null, 'Yeni duygu ekle')));
+  };
+  paint();
+  return h('div', { class: 'custom-wrap' }, h('span', { class: 'label' }, 'Kendi duyguların'), h('p', { class: 'muted' }, 'Hazır duyguların yanına istediğin kadar duygu ekleyebilirsin.'), list);
 }
 
 function viewWho() {
@@ -323,7 +446,7 @@ async function viewYear(year) {
   });
 
   const { totals, days } = emotionTotals(entries);
-  const top = EMOTIONS.filter(e => totals[e.id] > 0).sort((a, b) => totals[b.id] - totals[a.id]).slice(0, 5);
+  const top = Object.values(EMO).filter(e => totals[e.id] > 0).sort((a, b) => totals[b.id] - totals[a.id]).slice(0, 5);
   const maxT = top.length ? totals[top[0].id] : 1;
 
   const isThisYear = String(year) === t.slice(0, 4);
@@ -339,6 +462,7 @@ async function viewYear(year) {
           : (isThisYear ? `Bahçen yeni filizlendi, ${p.name}. İlk küreni boyayınca raflar dolmaya başlayacak.` : 'Bu yılın sayfaları boş.'))),
       isThisYear ? h('a', { class: 'btn big gold', href: '#/gun/' + t }, orb(data[t] ? { ...data[t], date: t } : null, 24, 'today'), data[t] ? 'Bugünün küresi' : 'Bugünün küresini boya') : null
     ),
+    divider(SEASON_OF_MONTH[new Date().getMonth()]),
     h('section', { class: 'months', 'aria-label': 'Aylar' }, months),
     h('div', { class: 'duo' },
       h('section', { class: 'card shelf-card' },
@@ -408,7 +532,7 @@ async function viewMonth(mKey) {
   while (cells.length % 7) cells.push(h('span', { class: 'cell pad' }));
 
   const { totals, days } = emotionTotals(both ? flat : mine);
-  const top = EMOTIONS.filter(e => totals[e.id] > 0).sort((a, b) => totals[b.id] - totals[a.id]).slice(0, 4);
+  const top = Object.values(EMO).filter(e => totals[e.id] > 0).sort((a, b) => totals[b.id] - totals[a.id]).slice(0, 4);
   const photoEntries = (both ? flat : mine).filter(e => e.photo).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 6);
   const notes = (both ? flat : mine).filter(e => e.note).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 3);
 
@@ -439,6 +563,7 @@ async function viewMonth(mKey) {
             : `${mine.length} küre · ${mine.filter(e => e.photo).length} fotoğraf · ${mine.filter(e => e.core).length} core memory`))),
       h('span', { class: 'hand line' }, MONTH_LINES[mi])
     ),
+    divider(season),
     toggle,
     h('div', { class: 'month-layout' },
       h('section', { class: 'card calendar', 'aria-label': 'Takvim' },
@@ -514,7 +639,7 @@ async function viewDay(date) {
   const paintPcts = () => { for (const [eid, el] of Object.entries(pctEls)) if (dr.emotions[eid]) el.textContent = '%' + Math.round(dr.emotions[eid] / sum() * 100); };
   const paintSliders = () => {
     for (const k in pctEls) delete pctEls[k];
-    const sel = EMOTIONS.filter(e => dr.emotions[e.id]);
+    const sel = Object.values(EMO).filter(e => dr.emotions[e.id] && !e.id.startsWith('c-yuz-') && e.id !== 'c-onizleme');
     if (!sel.length) { sliders.replaceChildren(h('p', { class: 'muted' }, 'Yukarıdan en az bir duygu seç; sonra burada oranlarını ayarlarsın.')); return; }
     sliders.replaceChildren(...sel.map(e => {
       const pct = h('span', { class: 'pct' });
@@ -526,14 +651,16 @@ async function viewDay(date) {
     }));
     paintPcts();
   };
-  const paintChips = () => chips.replaceChildren(...EMOTIONS.map(e => h('button', {
+  const paintChips = () => chips.replaceChildren(...[...EMOTIONS, ...customOf(p).map(c => EMO[c.id]).filter(Boolean)].map(e => h('button', {
     type: 'button', class: 'chip' + (dr.emotions[e.id] ? ' on' : ''), 'aria-pressed': String(!!dr.emotions[e.id]),
     style: dr.emotions[e.id] ? `background:${e.c}33` : '',
     onClick: () => {
       if (dr.emotions[e.id]) delete dr.emotions[e.id]; else dr.emotions[e.id] = 30;
       paintChips(); paintSliders(); paintOrb();
     }
-  }, art(e.id, 58, { className: dr.emotions[e.id] ? 'bob' : '' }), h('span', null, e.label))));
+  }, art(e.id, 58, { className: dr.emotions[e.id] ? 'bob' : '' }), h('span', null, e.label))),
+    h('button', { type: 'button', class: 'chip add-chip', onClick: () => emotionDialog(id => { dr.emotions[id] = 30; paintChips(); paintSliders(); paintOrb(); }) },
+      h('span', { class: 'plus', 'aria-hidden': 'true' }, '+'), h('span', null, 'Yeni duygu')));
   const coreBtn = h('button', { type: 'button', class: 'btn core-toggle' });
   const paintCore = () => { coreBtn.classList.toggle('gold', dr.core); coreBtn.setAttribute('aria-pressed', String(dr.core)); coreBtn.textContent = dr.core ? 'Core Memory oldu' : 'Core Memory yap'; };
   coreBtn.addEventListener('click', () => { dr.core = !dr.core; paintCore(); paintOrb(); });
@@ -652,6 +779,7 @@ async function route() {
       return viewLogin(ex.message);
     }
   }
+  registerCustom(S.store.profiles.flatMap(p => p.custom || []));
   const parts = location.hash.replace(/^#\/?/, '').split('/').filter(Boolean);
   if (!S.store.profiles.length || parts[0] === 'hesap-olustur') return viewProfileForm();
   if (!profile()) {

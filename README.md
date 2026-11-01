@@ -3,9 +3,10 @@
 Her gün bir küre, her küre bir anı. Günün duygularını oranlarıyla seçip bir küreyi boyadığın, not ve fotoğraf eklediğin küçük, masalsı bir günlük.
 
 - **Yıl, ay ve gün görünümleri.** Yıl rafları, takvim ve açık bir günlük sayfası.
-- **Dokuz duygu karakteri.** Birden fazla duygu seçip oranlarını ayarlayabilirsin.
+- **On beş duygu karakteri ve kendi duyguların.** Birden fazla duygu seçip oranlarını ayarlayabilirsin. İstediğin kadar yeni duygu (isim, renk, yüz) ekleyebilirsin.
 - **Core Memory.** Özel günler altın halkayla parlar ve ayrı bir rafta toplanır.
 - **Not ve fotoğraf.** Fotoğraflar yüklenirken küçültülür.
+- **Dolu bir yıl örneği.** Giriş ekranından ya da menüden, gerçek veriye dokunmadan 365 küresi dolu bir yılı gezebilirsin.
 - **Birden fazla hesap ve "Birlikte" görünümü.** Her hesap kendi hayvan avatarını seçer. Aynı ayı yan yana görebilirsiniz.
 
 Uygulama bu repodan GitHub Pages ile yayınlanır. Veriler (küreler, notlar, fotoğraflar) **ayrı ve gizli bir repoda** durur. Uygulama o repoya, senin oluşturduğun bir anahtarla doğrudan tarayıcıdan yazar. Sunucu, veritabanı ya da hesap ücreti yoktur.
