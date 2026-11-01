@@ -1,9 +1,9 @@
 # Anı Küreleri
 
-Her gün bir küre, her küre bir anı. Günün duygularını oranlarıyla seçip bir küreyi boyadığın, not ve fotoğraf eklediğin küçük bir pixel-art günlük.
+Her gün bir küre, her küre bir anı. Günün duygularını oranlarıyla seçip bir küreyi boyadığın, not ve fotoğraf eklediğin küçük, masalsı bir günlük.
 
 - **Yıl, ay ve gün görünümleri.** Yıl rafları, takvim ve açık bir günlük sayfası.
-- **Dokuz duygu cinciği.** Birden fazla duygu seçip oranlarını ayarlayabilirsin.
+- **Dokuz duygu karakteri.** Birden fazla duygu seçip oranlarını ayarlayabilirsin.
 - **Core Memory.** Özel günler altın halkayla parlar ve ayrı bir rafta toplanır.
 - **Not ve fotoğraf.** Fotoğraflar yüklenirken küçültülür.
 - **Birden fazla hesap ve "Birlikte" görünümü.** Her hesap kendi hayvan avatarını seçer. Aynı ayı yan yana görebilirsiniz.

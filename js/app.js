@@ -1,4 +1,4 @@
-import { EMOTIONS, EMO, ANIMALS, ANIMAL, SEASON_OF_MONTH, sprite, spriteURL } from './sprites.js';
+import { EMOTIONS, EMO, ANIMALS, ANIMAL, SEASON_OF_MONTH, art, artURL, vineSVG, flourishSVG, STAR_SVG, svgURL } from './art.js';
 import { Repo, Store, shrinkPhoto } from './data.js';
 
 // ---------- küçük yardımcılar ----------
@@ -87,7 +87,8 @@ function orbCss(entry, size, mode) {
 }
 
 function orb(entry, size, mode) {
-  const el = h('span', { class: 'orb' + (mode === 'today' && !emoList(entry).length ? ' orb-today' : '') });
+  const filled = emoList(entry).length > 0;
+  const el = h('span', { class: 'orb' + (mode === 'today' && !filled ? ' orb-today' : '') + (filled && size >= 60 ? ' glitter' : '') });
   el.style.cssText = orbCss(entry, size, mode);
   return el;
 }
@@ -121,26 +122,55 @@ const profileById = id => S.store.profiles.find(p => p.id === id);
 function setProfile(id) { S.profileId = id; LS.set('profile', id); }
 function setMode(m) { S.mode = m; LS.set('mode', m); }
 
+// Arka planda süzülen simler (bir kez kurulur)
+function sky() {
+  const layer = h('div', { class: 'sky', 'aria-hidden': 'true' });
+  const url = svgURL(STAR_SVG);
+  let seed = 7;
+  const rnd = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
+  for (let i = 0; i < 34; i++) {
+    const size = 6 + Math.round(rnd() * 12);
+    layer.append(h('span', { style: `left:${(rnd() * 100).toFixed(1)}%;top:${(rnd() * 100).toFixed(1)}%;width:${size}px;height:${size}px;background-image:url("${url}");animation-delay:${(rnd() * 6).toFixed(1)}s;animation-duration:${(3 + rnd() * 4).toFixed(1)}s;--glow:${['#FFE9A8', '#FFD1E3', '#E4D6FF', '#FFFFFF'][i % 4]}` }));
+  }
+  for (let i = 0; i < 60; i++) {
+    layer.append(h('i', { style: `left:${(rnd() * 100).toFixed(1)}%;top:${(rnd() * 100).toFixed(1)}%;animation-delay:${(rnd() * 5).toFixed(1)}s` }));
+  }
+  return layer;
+}
+
+// Kartların köşelerine çiçekli sarmaşık kıvrımları
+const DECORATED = '.login, .shelf-card, .calendar, .page, .future-card, .stats-card';
+function decorate(root) {
+  for (const el of root.querySelectorAll(DECORATED)) {
+    if (el.dataset.deco) continue;
+    el.dataset.deco = '1';
+    const url = `url("${svgURL(flourishSVG(el.dataset.season || SEASON_OF_MONTH[new Date().getMonth()]))}")`;
+    const left = !el.classList.contains('right'), right = !el.classList.contains('left');
+    if (left) el.prepend(h('span', { class: 'flourish tl', 'aria-hidden': 'true', style: `background-image:${url}` }));
+    if (right) el.prepend(h('span', { class: 'flourish tr', 'aria-hidden': 'true', style: `background-image:${url}` }));
+  }
+}
+
 function vineStrip(season, cls = 'vine') {
-  return h('div', { class: cls, 'aria-hidden': 'true', style: `background-image:url(${spriteURL('vine', { season, repeat: 1 }).url})` });
+  return h('div', { class: cls, 'aria-hidden': 'true', style: `background-image:url("${svgURL(vineSVG(season))}")` });
 }
 
 function shell(content, active) {
   const p = profile();
   const nav = h('nav', { class: 'tabs', 'aria-label': 'Görünüm' },
-    h('a', { href: '#/yil/' + new Date().getFullYear(), class: 'pxbtn' + (active === 'yil' ? ' on' : '') }, 'Yıl'),
-    h('a', { href: '#/ay/' + today().slice(0, 7), class: 'pxbtn' + (active === 'ay' ? ' on' : '') }, 'Ay'),
-    h('a', { href: '#/gun/' + today(), class: 'pxbtn' + (active === 'gun' ? ' on' : '') }, 'Bugün')
+    h('a', { href: '#/yil/' + new Date().getFullYear(), class: 'btn' + (active === 'yil' ? ' on' : '') }, 'Yıl'),
+    h('a', { href: '#/ay/' + today().slice(0, 7), class: 'btn' + (active === 'ay' ? ' on' : '') }, 'Ay'),
+    h('a', { href: '#/gun/' + today(), class: 'btn' + (active === 'gun' ? ' on' : '') }, 'Bugün')
   );
   const menu = h('details', { class: 'menu' },
-    h('summary', { class: 'who', 'aria-label': 'Hesap menüsü' }, sprite(p.animal, 2), h('span', null, p.name),
+    h('summary', { class: 'who', 'aria-label': 'Hesap menüsü' }, art(p.animal, 30), h('span', null, p.name),
       h('svg', { width: 14, height: 14, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': 3, 'aria-hidden': 'true' }, h('path', { d: 'M6 9l6 6 6-6' }))),
     h('div', { class: 'menu-pop' },
       h('span', { class: 'menu-label' }, 'Kim yazıyor?'),
       S.store.profiles.map(pr => h('button', {
         class: 'menu-item' + (pr.id === S.profileId ? ' on' : ''),
         onClick: () => { setProfile(pr.id); setMode('me'); route(); }
-      }, sprite(pr.animal, 2), pr.name)),
+      }, art(pr.animal, 30), pr.name)),
       h('hr'),
       h('a', { class: 'menu-item', href: '#/profil' }, 'Avatarımı değiştir'),
       h('a', { class: 'menu-item', href: '#/hesap-olustur' }, 'Yeni hesap oluştur'),
@@ -157,7 +187,7 @@ function shell(content, active) {
 }
 
 function loading() {
-  return h('div', { class: 'loading' }, sprite('joy', 3, { className: 'bob' }), h('span', null, 'Küreler raftan iniyor…'));
+  return h('div', { class: 'loading' }, art('joy', 54, { className: 'bob' }), h('span', null, 'Küreler raftan iniyor…'));
 }
 
 // ---------- giriş ve hesaplar ----------
@@ -167,7 +197,7 @@ function viewLogin(error) {
   const repoIn = h('input', { id: 'repo', type: 'text', placeholder: 'kullanıcı/repo', required: true });
   repoIn.value = LS.get('repo') || 'koloboros/ani-kureleri-veri';
   const err = h('p', { class: 'err', role: 'alert' }, error || '');
-  const btn = h('button', { class: 'pxbtn big gold', type: 'submit' }, 'Bahçeye gir');
+  const btn = h('button', { class: 'btn big gold', type: 'submit' }, 'Bahçeye gir');
   const form = h('form', { class: 'card login', onSubmit: async e => {
     e.preventDefault();
     btn.disabled = true; btn.textContent = 'Kapı açılıyor…'; err.textContent = '';
@@ -183,7 +213,7 @@ function viewLogin(error) {
       btn.disabled = false; btn.textContent = 'Bahçeye gir';
     }
   } },
-    h('div', { class: 'login-sprites', 'aria-hidden': 'true' }, ['joy', 'sad', 'anger', 'fear', 'disgust'].map((id, i) => sprite(id, 3, { className: 'bob d' + i }))),
+    h('div', { class: 'login-sprites', 'aria-hidden': 'true' }, ['joy', 'sad', 'anger', 'fear', 'disgust'].map((id, i) => art(id, 54, { className: 'bob d' + i }))),
     h('h1', null, 'Anı Küreleri'),
     h('p', { class: 'lead' }, 'Her gün bir küre, her küre bir anı. Devam etmek için anahtarını gir; bu cihaz seni hatırlar.'),
     h('label', { for: 'tok' }, 'Anahtar'), tokenIn,
@@ -219,9 +249,9 @@ function viewProfileForm({ editing = false } = {}) {
   const paint = () => grid.replaceChildren(...ANIMALS.map(a => h('button', {
     type: 'button', role: 'radio', 'aria-checked': String(chosen === a.id), class: 'animal' + (chosen === a.id ? ' on' : ''),
     onClick: () => { chosen = a.id; paint(); }
-  }, sprite(a.id, 5, { className: chosen === a.id ? 'bob' : '' }), h('span', null, a.label))));
+  }, art(a.id, 88, { className: chosen === a.id ? 'bob' : '' }), h('span', null, a.label))));
   paint();
-  const btn = h('button', { class: 'pxbtn big gold', type: 'submit' }, editing ? 'Kaydet' : 'Hesabı oluştur');
+  const btn = h('button', { class: 'btn big gold', type: 'submit' }, editing ? 'Kaydet' : 'Hesabı oluştur');
   const form = h('form', { class: 'card login wide', onSubmit: async e => {
     e.preventDefault();
     const name = nameIn.value.trim();
@@ -252,7 +282,7 @@ function viewWho() {
       h('h1', null, 'Kim yazıyor?'),
       h('div', { class: 'animals' }, S.store.profiles.map(p => h('button', {
         class: 'animal', onClick: () => { setProfile(p.id); route(); }
-      }, sprite(p.animal, 5), h('span', null, p.name))))
+      }, art(p.animal, 88), h('span', null, p.name))))
     )));
 }
 
@@ -285,7 +315,7 @@ async function viewYear(year) {
     return h('a', { href: '#/ay/' + mKey, class: 'month' + (blank ? ' blank' : '') },
       vineStrip(season, 'vine card-vine'),
       h('div', { class: 'month-head' },
-        h('span', { class: 'badge', style: `background:${SEASON_TINT[season]}` }, sprite('m' + (mi + 1), 3)),
+        h('span', { class: 'badge', style: `background:${SEASON_TINT[season]}` }, art('m' + (mi + 1), 32)),
         h('span', { class: 'month-title' }, h('strong', null, name),
           h('small', null, mEntries.length ? `${mEntries.length} küre${mEntries.some(e => e.photo) ? ' · ' + mEntries.filter(e => e.photo).length + ' fotoğraf' : ''}` : (mKey === t.slice(0, 7) ? 'bu ay' : '')))),
       blank ? h('span', { class: 'unwritten' }, 'henüz yazılmamış sayfa') : h('div', { class: 'mini-grid' }, days)
@@ -307,7 +337,7 @@ async function viewYear(year) {
         h('p', { class: 'lead' }, entries.length
           ? [`${p.name}, bu yıl `, h('strong', null, `${entries.length} küre`), photos ? [', ', h('strong', null, `${photos} fotoğraf`)] : '', cores.length ? [' ve ', h('strong', null, `${cores.length} core memory`)] : '', ' biriktirdin.']
           : (isThisYear ? `Bahçen yeni filizlendi, ${p.name}. İlk küreni boyayınca raflar dolmaya başlayacak.` : 'Bu yılın sayfaları boş.'))),
-      isThisYear ? h('a', { class: 'pxbtn big gold', href: '#/gun/' + t }, orb(data[t] ? { ...data[t], date: t } : null, 24, 'today'), data[t] ? 'Bugünün küresi' : 'Bugünün küresini boya') : null
+      isThisYear ? h('a', { class: 'btn big gold', href: '#/gun/' + t }, orb(data[t] ? { ...data[t], date: t } : null, 24, 'today'), data[t] ? 'Bugünün küresi' : 'Bugünün küresini boya') : null
     ),
     h('section', { class: 'months', 'aria-label': 'Aylar' }, months),
     h('div', { class: 'duo' },
@@ -318,14 +348,14 @@ async function viewYear(year) {
           : [0, 1, 2].map(i => h('span', { class: 'core' }, h('span', { class: 'bob', style: `animation-delay:${i * .5}s` }, orb(null, 72, 'future')), h('span', { class: 'hand' }, 'sıradaki…')))),
         h('div', { class: 'shelf' })
       ),
-      h('section', { class: 'card' },
-        h('div', { class: 'card-head' }, h('h2', null, 'Bu yılın cincikleri'), h('small', null, 'en sık uğrayanlar')),
+      h('section', { class: 'card stats-card' },
+        h('div', { class: 'card-head' }, h('h2', null, 'Bu yılın duyguları'), h('small', null, 'en sık uğrayanlar')),
         top.length ? h('div', { class: 'stats' }, top.map((e, i) => h('div', { class: 'stat' },
-          h('span', { class: 'bob', style: `animation-delay:${i * .3}s` }, sprite(e.id, 3)),
+          h('span', { class: 'bob', style: `animation-delay:${i * .3}s` }, art(e.id, 54)),
           h('span', { class: 'stat-name' }, e.label),
           h('span', { class: 'bar' }, h('span', { style: `width:${Math.max(6, totals[e.id] / maxT * 100)}%;background:${e.c}` })),
           h('span', { class: 'stat-pct' }, '%' + Math.round(totals[e.id] / days * 100))
-        ))) : h('p', { class: 'muted' }, 'Küreler biriktikçe hangi cinciklerin sana en çok uğradığını burada göreceksin.')
+        ))) : h('p', { class: 'muted' }, 'Küreler biriktikçe hangi duyguların sana en çok uğradığını burada göreceksin.')
       )
     )
   );
@@ -386,7 +416,7 @@ async function viewMonth(mKey) {
     S.store.profiles.map(pr => h('button', {
       class: !both && pr.id === S.profileId ? 'on' : '', 'aria-pressed': String(!both && pr.id === S.profileId),
       onClick: () => { setProfile(pr.id); setMode('me'); viewMonth(mKey); }
-    }, sprite(pr.animal, 2), pr.name)),
+    }, art(pr.animal, 30), pr.name)),
     h('button', { class: both ? 'on' : '', 'aria-pressed': String(both), onClick: () => { setMode('both'); viewMonth(mKey); } }, 'Birlikte')
   ) : null;
 
@@ -399,7 +429,7 @@ async function viewMonth(mKey) {
   const content = h('div', { class: 'stack' },
     h('section', { class: 'hero' },
       h('div', { class: 'month-hero' },
-        h('span', { class: 'badge big', style: `background:${SEASON_TINT[season]}` }, sprite('m' + month, 6)),
+        h('span', { class: 'badge big', style: `background:${SEASON_TINT[season]}` }, art('m' + month, 58)),
         h('div', null,
           h('div', { class: 'year-switch' },
             h('a', { class: 'arrow', href: '#/ay/' + prevKey, 'aria-label': 'Önceki ay' }, '‹'),
@@ -412,14 +442,14 @@ async function viewMonth(mKey) {
     toggle,
     h('div', { class: 'month-layout' },
       h('section', { class: 'card calendar', 'aria-label': 'Takvim' },
-        both ? h('div', { class: 'legend' }, people.map(p => h('span', null, sprite(p.animal, 2), p.name))) : null,
+        both ? h('div', { class: 'legend' }, people.map(p => h('span', null, art(p.animal, 30), p.name))) : null,
         h('div', { class: 'week' }, WEEK_SHORT.map(w => h('span', null, w))),
         h('div', { class: 'cells' + (both ? ' both' : '') }, cells)
       ),
       h('aside', { class: 'side' },
-        h('section', { class: 'card' }, h('h2', null, 'Ayın cincikleri'),
+        h('section', { class: 'card' }, h('h2', null, 'Ayın duyguları'),
           top.length ? h('div', { class: 'cinc4' }, top.map((e, i) => h('div', null,
-            h('span', { class: 'bob', style: `animation-delay:${i * .3}s` }, sprite(e.id, 3)),
+            h('span', { class: 'bob', style: `animation-delay:${i * .3}s` }, art(e.id, 54)),
             h('strong', null, e.label), h('small', null, '%' + Math.round(totals[e.id] / days * 100)))))
             : h('p', { class: 'muted' }, 'Bu ay henüz küre yok.')),
         h('section', { class: 'card' }, h('h2', null, 'Ayın fotoğrafları'),
@@ -455,10 +485,10 @@ async function viewDay(date) {
 
   if (date > t) {
     shell(h('div', { class: 'stack' }, h('section', { class: 'card future-card' },
-      sprite('ennui', 5, { className: 'bob' }),
+      art('ennui', 88, { className: 'bob' }),
       h('h1', null, longDate(date)),
       h('p', { class: 'lead' }, 'Bu sayfa henüz yazılmadı. O gün geldiğinde küresini boyayabilirsin.'),
-      h('a', { class: 'pxbtn gold', href: '#/gun/' + t }, 'Bugüne dön')), nav), 'gun');
+      h('a', { class: 'btn gold', href: '#/gun/' + t }, 'Bugüne dön')), nav), 'gun');
     return;
   }
 
@@ -470,7 +500,7 @@ async function viewDay(date) {
   });
   const dr = S.drafts.get(key);
 
-  // --- sol sayfa: küre, cincikler, oranlar ---
+  // --- sol sayfa: küre, duygular, oranlar ---
   const orbBox = h('div', { class: 'big-orb bob' });
   const coreBadge = h('span', { class: 'core-badge' }, 'Core Memory');
   const paintOrb = () => {
@@ -485,7 +515,7 @@ async function viewDay(date) {
   const paintSliders = () => {
     for (const k in pctEls) delete pctEls[k];
     const sel = EMOTIONS.filter(e => dr.emotions[e.id]);
-    if (!sel.length) { sliders.replaceChildren(h('p', { class: 'muted' }, 'Yukarıdan en az bir cincik seç; sonra burada oranlarını ayarlarsın.')); return; }
+    if (!sel.length) { sliders.replaceChildren(h('p', { class: 'muted' }, 'Yukarıdan en az bir duygu seç; sonra burada oranlarını ayarlarsın.')); return; }
     sliders.replaceChildren(...sel.map(e => {
       const pct = h('span', { class: 'pct' });
       pctEls[e.id] = pct;
@@ -503,8 +533,8 @@ async function viewDay(date) {
       if (dr.emotions[e.id]) delete dr.emotions[e.id]; else dr.emotions[e.id] = 30;
       paintChips(); paintSliders(); paintOrb();
     }
-  }, sprite(e.id, 2, { className: dr.emotions[e.id] ? 'bob' : '' }), h('span', null, e.label))));
-  const coreBtn = h('button', { type: 'button', class: 'pxbtn core-toggle' });
+  }, art(e.id, 58, { className: dr.emotions[e.id] ? 'bob' : '' }), h('span', null, e.label))));
+  const coreBtn = h('button', { type: 'button', class: 'btn core-toggle' });
   const paintCore = () => { coreBtn.classList.toggle('gold', dr.core); coreBtn.setAttribute('aria-pressed', String(dr.core)); coreBtn.textContent = dr.core ? 'Core Memory oldu' : 'Core Memory yap'; };
   coreBtn.addEventListener('click', () => { dr.core = !dr.core; paintCore(); paintOrb(); });
   paintOrb(); paintChips(); paintSliders(); paintCore();
@@ -549,9 +579,9 @@ async function viewDay(date) {
   note.value = dr.note;
   note.addEventListener('input', () => { dr.note = note.value; });
 
-  const saveBtn = h('button', { type: 'button', class: 'pxbtn big plum' }, 'Küreyi rafa koy');
+  const saveBtn = h('button', { type: 'button', class: 'btn big plum' }, 'Küreyi rafa koy');
   saveBtn.addEventListener('click', async () => {
-    if (!Object.keys(dr.emotions).length) { toast('En az bir cincik seç.', 'warn'); return; }
+    if (!Object.keys(dr.emotions).length) { toast('En az bir duygu seç.', 'warn'); return; }
     saveBtn.disabled = true; saveBtn.textContent = 'Rafa konuyor…';
     try {
       let photoPath = dr.photo;
@@ -585,18 +615,17 @@ async function viewDay(date) {
 
   const content = h('div', { class: 'stack' },
     h('div', { class: 'book' },
-      h('section', { class: 'page left' },
-        vineStrip(season, 'vine page-vine'),
+      h('section', { class: 'page left', 'data-season': season },
         h('div', { class: 'page-head' },
           h('div', null, h('span', { class: 'weekday' }, weekday), h('h1', null, longDate(date))),
           coreBadge),
         orbBox,
-        h('h2', null, 'Bugün kimler uğradı?'), chips,
+        h('h2', null, 'Bugün hangi duygular uğradı?'), chips,
         h('h2', null, 'Oranlar'), sliders,
         coreBtn
       ),
-      h('section', { class: 'page right' },
-        h('span', { class: 'page-icon bob', 'aria-hidden': 'true' }, sprite('m' + (d.getMonth() + 1), 4)),
+      h('section', { class: 'page right', 'data-season': season },
+        h('span', { class: 'page-icon bob', 'aria-hidden': 'true' }, art('m' + (d.getMonth() + 1), 42)),
         fileIn, photoBox, caption,
         h('label', { for: 'note', class: 'h2' }, 'Günlük'), note,
         h('div', { class: 'save-row' }, saveBtn, clearBtn)
@@ -637,7 +666,7 @@ async function route() {
     if (parts[0] === 'yil' && /^\d{4}$/.test(parts[1] || '')) return await viewYear(Number(parts[1]));
     location.replace('#/yil/' + new Date().getFullYear());
   } catch (ex) {
-    shell(h('div', { class: 'card center-card' }, sprite('sad', 4), h('p', null, ex.message), h('button', { class: 'pxbtn', onClick: () => route() }, 'Tekrar dene')), '');
+    shell(h('div', { class: 'card center-card' }, art('sad', 64), h('p', null, ex.message), h('button', { class: 'btn', onClick: () => route() }, 'Tekrar dene')), '');
   }
 }
 
@@ -647,6 +676,8 @@ document.addEventListener('click', e => {
   const m = document.querySelector('details.menu[open]');
   if (m && !m.contains(e.target)) m.open = false;
 });
+document.body.prepend(sky());
+new MutationObserver(() => decorate(app)).observe(app, { childList: true, subtree: true });
 const fav = document.querySelector('link[rel="icon"]');
-if (fav) fav.href = spriteURL('joy').url;
+if (fav) fav.href = artURL('joy');
 route();
