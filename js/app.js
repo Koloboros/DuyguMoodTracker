@@ -77,7 +77,7 @@ function orbCss(entry, mode) {
   }
   if (!em.length) {
     let st = 'background:radial-gradient(circle at 32% 26%, rgba(255,255,255,.5) 0, rgba(255,255,255,.1) 22%, rgba(255,255,255,0) 46%), radial-gradient(circle at 50% 50%, rgba(255,255,255,.03) 48%, rgba(214,190,255,.18) 100%);';
-    if (mode === 'today') st += 'box-shadow:0 0 0 .08em #FFD27A, 0 0 .6em rgba(255,210,122,.6);';
+    if (mode === 'today') st += 'box-shadow:0 0 0 1.5px #FFD27A;';
     else if (mode === 'future') st += 'box-shadow:inset 0 0 0 1px rgba(214,190,255,.14);opacity:.45;';
     else st += 'box-shadow:inset 0 0 0 1px rgba(214,190,255,.3);';
     return st;
@@ -99,7 +99,7 @@ function orbCss(entry, mode) {
 
 function orb(entry, size, mode) {
   const filled = emoList(entry).length > 0;
-  const el = h('span', { class: 'orb' + (mode === 'today' && !filled ? ' orb-today' : '') + (filled && size >= 60 ? ' glitter' : '') });
+  const el = h('span', { class: 'orb' + (filled && size >= 60 ? ' glitter' : '') });
   el.style.cssText = orbCss(entry, mode);
   if (size) el.style.fontSize = size + 'px';
   return el;
@@ -201,7 +201,7 @@ function vineStrip(season, cls = 'vine') {
   return h('div', { class: cls, 'aria-hidden': 'true', style: `background-image:url("${svgURL(vineSVG(season))}")` });
 }
 
-function shell(content, active, season = SEASON_OF_MONTH[new Date().getMonth()]) {
+function shell(content, active, season = SEASON_OF_MONTH[new Date().getMonth()], tools = null) {
   const p = profile();
   S.season = season;
   setSkySeason(season);
@@ -235,7 +235,7 @@ function shell(content, active, season = SEASON_OF_MONTH[new Date().getMonth()])
   const banner = S.demo ? h('div', { class: 'demo-banner', role: 'note' },
     h('span', null, art('hope', 34), h('span', null, h('strong', null, 'Örnek yıl. '), 'Bu küreler gerçek verin değil; dolu bir yılın nasıl göründüğünü gösterir. Burada yaptığın değişiklikler kaydedilmez.')),
     h('button', { class: 'btn', onClick: exitDemo }, 'Örnekten çık')) : null;
-  app.replaceChildren(vineStrip(season), h('div', { class: 'wrap' }, header, banner, content));
+  app.replaceChildren(vineStrip(season), h('div', { class: 'wrap' }, header, banner, tools ? h('div', { class: 'page-tools' }, tools) : null, content));
 }
 
 // ---------- örnek yıl ----------
@@ -261,6 +261,10 @@ function exitDemo() {
   S.drafts.clear();
   location.hash = '#/yil/' + new Date().getFullYear();
   route();
+}
+
+function dlButton(label, onClick) {
+  return h('button', { type: 'button', class: 'btn gold dl-btn', onClick }, dlIcon(), label);
 }
 
 function divider(season) {
@@ -544,25 +548,19 @@ async function viewYear(year) {
   const keys = Object.values(EMO).filter(e => totals[e.id] > 0).sort((a, b) => totals[b.id] - totals[a.id]);
   const grand = keys.reduce((a, e) => a + totals[e.id], 0) || 1;
 
-  const exportBtn = h('button', { class: 'btn', onClick: () => exportDialog({
+  const exportBtn = dlButton('Yılı indir', () => exportDialog({
     title: `${year} anı arşivi`, size: 'A5 · 148 × 210 mm', pdfFormat: 'a5', filename: `ani-arsivi-${year}`,
     render: (theme, scale) => renderYear({ year, entries, profile: p, theme, today: t, scale })
-  }) }, dlIcon(), 'Yılı indir');
+  }));
 
   const content = h('div', { class: 'stack' },
     h('section', { class: 'hero' },
       h('div', { class: 'hero-text' },
-        h('span', { class: 'hand kicker' }, 'Anı arşivi'),
         h('div', { class: 'year-switch' },
           h('a', { class: 'arrow', href: '#/yil/' + (year - 1), 'aria-label': 'Önceki yıl' }, '‹'),
           h('h1', { class: 'glow-title' }, String(year)),
           h('a', { class: 'arrow', href: '#/yil/' + (year + 1), 'aria-label': 'Sonraki yıl' }, '›')),
-        h('p', { class: 'lead' }, entries.length
-          ? [`${p.name}, bu yıl rafa `, h('strong', null, `${entries.length} küre`), photos ? [', ', h('strong', null, `${photos} fotoğraf`)] : '', cores.length ? [' ve ', h('strong', { class: 'gold-text' }, `${cores.length} core memory`)] : '', ' koydun. Bir küreye dokun, o günün sayfası açılsın.']
-          : (isThisYear ? `Arşivin seni bekliyor, ${p.name}. İlk küreni boyayınca raflar ışımaya başlayacak.` : 'Bu yılın rafları boş.')),
-        h('div', { class: 'hero-actions' },
-          isThisYear ? h('a', { class: 'btn big gold', href: '#/gun/' + t }, orb(data[t] ? { ...data[t], date: t } : null, 24, 'today'), data[t] ? 'Bugünün küresi' : 'Bugünün küresini boya') : null,
-          exportBtn)),
+        h('p', { class: 'muted' }, `${entries.length} küre · ${photos} fotoğraf · ${cores.length} core memory`)),
       pedestal),
     h('section', { class: 'archive', 'aria-label': `${year} anı arşivi` },
       h('div', { class: 'far-wall', 'aria-hidden': 'true' }),
@@ -575,9 +573,9 @@ async function viewYear(year) {
         h('div', { class: 'legend-grid' }, keys.slice(0, 10).map((e, i) => h('div', { class: 'legend-item' },
           h('span', { class: 'bob', style: `animation-delay:${i * .25}s` }, art(e.id, 46)),
           h('span', null, h('strong', null, e.label), h('small', null, '%' + Math.round(totals[e.id] / days * 100))))))
-      ] : h('p', { class: 'muted' }, 'Küreler biriktikçe hangi duyguların sana en çok uğradığını burada göreceksin.'))
+      ] : h('p', { class: 'muted' }, 'Henüz küre yok.'))
   );
-  shell(content, 'yil');
+  shell(content, 'yil', undefined, exportBtn);
 }
 
 function dlIcon() {
@@ -704,6 +702,19 @@ async function viewMonth(mKey) {
     return h('a', { href: '#/gun/' + e.date, class: 'polaroid small', style: `--r:${[-5, 3, -2, 4, -3, 2][i]}deg` }, img, h('span', { class: 'hand' }, shortDate(e.date)));
   }));
 
+  const exportBtn = dlButton('Ayı indir', () => {
+          const pr = profile();
+          const own = Object.entries(S.store.cachedYear(pr.id, year) || {}).filter(([d]) => d.startsWith(mKey)).map(([date, e]) => ({ ...e, date })).sort((a, b) => a.date.localeCompare(b.date));
+          exportDialog({
+            title: `${MONTHS[mi]} ${year} özeti`, size: 'A5 · 148 × 210 mm', pdfFormat: 'a5', filename: `ani-kureleri-${mKey}`,
+            render: async (theme, scale) => {
+              const photoSrc = {};
+              for (const e of own.filter(x => x.core && x.photo).slice(0, 3)) { try { photoSrc[e.date] = await S.store.photoURL(e.photo); } catch (er) { /* fotoğrafsız devam */ } }
+              return renderMonth({ year, month, entries: own, profile: pr, theme, photoSrc, scale });
+            }
+          });
+  });
+
   const content = h('div', { class: 'stack' },
     h('section', { class: 'hero' },
       h('div', { class: 'month-hero' },
@@ -715,22 +726,7 @@ async function viewMonth(mKey) {
             h('a', { class: 'arrow', href: '#/ay/' + nextKey, 'aria-label': 'Sonraki ay' }, '›')),
           h('p', { class: 'muted' }, both ? `${flat.length} küre · ${people.map(p => p.name).join(' ve ')} yan yana`
             : `${mine.length} küre · ${mine.filter(e => e.photo).length} fotoğraf · ${mine.filter(e => e.core).length} core memory`))),
-      h('div', { class: 'month-side' },
-        h('span', { class: 'hand line' }, MONTH_LINES[mi]),
-        h('button', { class: 'btn', onClick: () => {
-          const pr = profile();
-          const own = Object.entries(S.store.cachedYear(pr.id, year) || {}).filter(([d]) => d.startsWith(mKey)).map(([date, e]) => ({ ...e, date })).sort((a, b) => a.date.localeCompare(b.date));
-          exportDialog({
-            title: `${MONTHS[mi]} ${year} özeti`, size: 'A5 · 148 × 210 mm', pdfFormat: 'a5', filename: `ani-kureleri-${mKey}`,
-            render: async (theme, scale) => {
-              const photoSrc = {};
-              for (const e of own.filter(x => x.core && x.photo).slice(0, 3)) { try { photoSrc[e.date] = await S.store.photoURL(e.photo); } catch (er) { /* fotoğrafsız devam */ } }
-              return renderMonth({ year, month, entries: own, profile: pr, theme, photoSrc, scale });
-            }
-          });
-        } }, dlIcon(), 'Ay özetini indir'))
     ),
-    divider(season),
     toggle,
     h('div', { class: 'month-layout' },
       h('section', { class: 'card calendar', 'aria-label': 'Takvim', 'data-season': season },
@@ -738,6 +734,7 @@ async function viewMonth(mKey) {
         h('div', { class: 'week' }, WEEK_SHORT.map(w => h('span', null, w))),
         h('div', { class: 'cells' + (both ? ' both' : '') }, cells)
       ),
+
       h('aside', { class: 'side' },
         h('section', { class: 'card' }, h('h2', null, 'Ayın duyguları'),
           top.length ? h('div', { class: 'cinc4' }, top.map((e, i) => h('div', null,
@@ -745,15 +742,15 @@ async function viewMonth(mKey) {
             h('strong', null, e.label), h('small', null, '%' + Math.round(totals[e.id] / days * 100)))))
             : h('p', { class: 'muted' }, 'Bu ay henüz küre yok.')),
         h('section', { class: 'card' }, h('h2', null, 'Ayın fotoğrafları'),
-          photoEntries.length ? polaroids : h('p', { class: 'muted' }, 'Bir güne fotoğraf eklediğinde burada polaroid olarak görünecek.')),
+          photoEntries.length ? polaroids : h('p', { class: 'muted' }, 'Henüz fotoğraf yok.')),
         h('section', { class: 'card' }, h('h2', null, 'Son notlar'),
           notes.length ? notes.map(e => h('a', { href: '#/gun/' + e.date, class: 'note-snip' },
             h('span', { class: 'hand' }, `${shortDate(e.date)}${both ? ' · ' + profileById(e.pid).name : ''} — ${e.note.length > 120 ? e.note.slice(0, 120) + '…' : e.note}`)))
-            : h('p', { class: 'muted' }, 'Notların burada kısa kısa görünecek.'))
+            : h('p', { class: 'muted' }, 'Henüz not yok.'))
       )
     )
   );
-  shell(content, 'ay', season);
+  shell(content, 'ay', season, exportBtn);
 }
 
 // ---------- gün ----------
@@ -907,7 +904,7 @@ async function viewDay(date) {
       viewDay(date);
     } catch (ex) { toast(ex.message, 'warn'); }
   } }, 'Küreyi boşalt') : null;
-  const exportBtn = h('button', { type: 'button', class: 'btn gold', onClick: () => exportDialog({
+  const exportBtn = dlButton('Günü indir', () => exportDialog({
     title: `${longDate(date)} · gün özeti`, size: 'A6 yatay · 148 × 105 mm (A5’in yarısı)', pdfFormat: 'a6l', filename: `ani-kuresi-${date}`,
     render: async (theme, scale) => {
       let photoSrc = null;
@@ -916,12 +913,9 @@ async function viewDay(date) {
       const entry = { emotions: dr.emotions, note: dr.note.trim(), caption: dr.caption.trim(), core: dr.core };
       return renderDay({ date, entry, profile: p, theme, photoSrc, scale });
     }
-  }) }, dlIcon(), 'Gün özetini indir');
+  }));
 
   const content = h('div', { class: 'stack' },
-    h('div', { class: 'day-tools' },
-      h('span', { class: 'muted' }, saved ? 'Bu sayfayı ajandana basmak için:' : 'Henüz kaydedilmedi; ekrandaki hâli basılır.'),
-      exportBtn),
     h('div', { class: 'book' },
       h('section', { class: 'page left', 'data-season': season },
         h('div', { class: 'page-head' },
@@ -940,7 +934,7 @@ async function viewDay(date) {
     ),
     nav
   );
-  shell(content, 'gun', season);
+  shell(content, 'gun', season, exportBtn);
 }
 
 // ---------- yönlendirme ----------
@@ -985,7 +979,6 @@ document.addEventListener('click', e => {
   if (m && !m.contains(e.target)) m.open = false;
 });
 document.body.prepend(sky());
-new MutationObserver(() => decorate(app)).observe(app, { childList: true, subtree: true });
 const fav = document.querySelector('link[rel="icon"]');
 if (fav) fav.href = artURL('joy');
 route();

@@ -93,7 +93,7 @@ button { font: inherit; }
 @keyframes sway { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(1.4deg); } }
 @keyframes sway-r { 0%, 100% { transform: scaleX(-1) rotate(0deg); } 50% { transform: scaleX(-1) rotate(1.4deg); } }
 .hung { padding-left: 40px; padding-right: 40px; }
-.day-tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 12px; margin-bottom: -8px; }
+.page-tools { display: flex; justify-content: flex-end; margin: -12px 0 18px; }
 .login[data-deco] { padding-top: 64px; }
 .divider { height: 40px; background-repeat: no-repeat; background-position: center; background-size: 320px 40px; margin: -6px 0; opacity: .85; }
 
@@ -260,7 +260,7 @@ a.tslot:hover, a.tslot:focus-visible { transform: scale(1.45); position: relativ
 .cell { min-height: 106px; padding: 8px; border-radius: 20px; display: flex; flex-direction: column; background: rgba(255, 255, 255, .045); border: 1px solid var(--line-soft); text-decoration: none; color: var(--ink); transition: transform .15s, box-shadow .15s, background .15s; min-width: 0; }
 a.cell:hover { transform: translateY(-3px); background: rgba(255, 255, 255, .09); box-shadow: 0 10px 24px rgba(0, 0, 0, .3); color: #FFFFFF; }
 .cell.pad { background: none; border: 0; }
-.cell.today { background: rgba(255, 207, 122, .08); border: 2px dashed var(--gold); }
+.cell.today { border-color: rgba(255, 210, 122, .45); }
 .cell.core { background: radial-gradient(circle at 50% 55%, rgba(255, 207, 122, .22), rgba(255, 207, 122, .04) 70%); border: 1px solid var(--gold); box-shadow: 0 0 18px rgba(255, 200, 110, .25); }
 .cell.future { opacity: .5; }
 .num { font-family: var(--display); font-weight: 600; font-size: 15px; }
@@ -376,7 +376,7 @@ textarea.lined { width: 100%; min-height: 230px; resize: vertical; padding: 2px 
   .hang-vine.r { right: -18px; }
   .hung { padding-left: 22px; padding-right: 22px; }
   .calendar.hung { padding-left: 14px; padding-right: 14px; }
-  .day-tools { justify-content: space-between; }
+  .page-tools { margin: -6px 0 14px; }
   .card { padding: 20px 18px; border-radius: 24px; }
   .hero { gap: 18px; }
   .pedestal { height: 110px; }
