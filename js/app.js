@@ -327,7 +327,6 @@ function viewLogin(error) {
     h('p', { class: 'lead' }, 'Her gün bir küre, her küre bir anı. Devam etmek için anahtarını gir; bu cihaz seni hatırlar.'),
     h('label', { for: 'tok' }, 'Anahtar'), tokenIn,
     err, btn,
-    h('button', { type: 'button', class: 'linkbtn demo-link', onClick: enterDemo }, 'Önce dolu bir yıl örneğine göz at'),
     h('details', { class: 'help' }, h('summary', null, 'Anahtar nedir, nereden alınır?'),
       h('ol', null,
         h('li', null, 'GitHub › Settings › Developer settings › Fine-grained tokens › Generate new token.'),

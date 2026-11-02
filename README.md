@@ -6,7 +6,7 @@ Her gün bir küre, her küre bir anı. Günün duygularını oranlarıyla seçi
 - **On beş duygu karakteri ve kendi duyguların.** Birden fazla duygu seçip oranlarını ayarlayabilirsin. İstediğin kadar yeni duygu (isim, renk, yüz) ekleyebilirsin.
 - **Core Memory.** Özel günler altın halkayla parlar ve ayrı bir rafta toplanır.
 - **Not ve fotoğraf.** Fotoğraflar yüklenirken küçültülür.
-- **Dolu bir yıl örneği.** Giriş ekranından ya da menüden, gerçek veriye dokunmadan 365 küresi dolu bir yılı gezebilirsin.
+- **Dolu bir yıl örneği.** Hesap menüsünden, gerçek veriye dokunmadan 365 küresi dolu bir yılı gezebilirsin.
 - **Birden fazla hesap ve "Birlikte" görünümü.** Her hesap kendi hayvan avatarını seçer. Aynı ayı yan yana görebilirsiniz.
 
 Uygulama bu repodan GitHub Pages ile yayınlanır. Veriler (küreler, notlar, fotoğraflar) **aynı repoda, ayrı bir `veri` dalında** durur. Böylece her kayıt siteyi yeniden derletmez. Uygulama bu dala, senin oluşturduğun bir anahtarla doğrudan tarayıcıdan yazar. Sunucu, veritabanı ya da hesap ücreti yoktur.
