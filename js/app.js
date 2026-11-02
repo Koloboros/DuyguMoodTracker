@@ -1,4 +1,4 @@
-import { EMOTIONS, EMO, ANIMALS, ANIMAL, SEASON_OF_MONTH, CUSTOM_FACES, SWATCHES, registerCustom, art, artURL, vineSVG, flourishSVG, dividerSVG, petalSVG, butterflySVG, STAR_SVG, svgURL } from './art.js';
+import { EMOTIONS, EMO, ANIMALS, ANIMAL, SEASON_OF_MONTH, CUSTOM_FACES, SWATCHES, registerCustom, art, artURL, vineSVG, flourishSVG, dividerSVG, petalSVG, snowSVG, leafFallSVG, blossomSVG, hangingVineSVG, STAR_SVG, svgURL } from './art.js';
 import { DemoStore, DEMO_YEAR } from './demo.js';
 import { Repo, Store, shrinkPhoto } from './data.js';
 import { renderDay, renderMonth, renderYear, toPDF, toPNG, download } from './export.js';
@@ -72,6 +72,9 @@ function emoList(entry) {
 
 function orbCss(entry, mode) {
   const em = emoList(entry);
+  if (!em.length && mode === 'glass') {
+    return 'background:radial-gradient(circle at 32% 24%, rgba(255,255,255,.7) 0, rgba(255,255,255,.22) 9%, rgba(255,255,255,0) 26%), radial-gradient(circle at 68% 82%, rgba(255,255,255,.2) 0, rgba(255,255,255,0) 28%), radial-gradient(circle at 50% 50%, rgba(255,255,255,.02) 56%, rgba(214,190,255,.16) 88%, rgba(255,255,255,.3) 100%);box-shadow:inset 0 0 0 1px rgba(255,255,255,.16), 0 .06em .2em rgba(6,0,20,.35);';
+  }
   if (!em.length) {
     let st = 'background:radial-gradient(circle at 32% 26%, rgba(255,255,255,.5) 0, rgba(255,255,255,.1) 22%, rgba(255,255,255,0) 46%), radial-gradient(circle at 50% 50%, rgba(255,255,255,.03) 48%, rgba(214,190,255,.18) 100%);';
     if (mode === 'today') st += 'box-shadow:0 0 0 .08em #FFD27A, 0 0 .6em rgba(255,210,122,.6);';
@@ -131,7 +134,14 @@ const profileById = id => S.store.profiles.find(p => p.id === id);
 function setProfile(id) { S.profileId = id; if (!S.demo) LS.set('profile', id); }
 function setMode(m) { S.mode = m; LS.set('mode', m); }
 
-// Arka planda süzülen simler (bir kez kurulur)
+// Arka planda süzülen simler ve mevsime göre düşen süsler (bir kez kurulur, mevsim değişince güncellenir)
+const FALLING = {
+  winter: { make: c => snowSVG(c), cols: ['#FFFFFF', '#E3ECF8', '#D6E4FF'], ratio: 1 },
+  spring: { make: c => petalSVG(c), cols: ['#F7A8C4', '#FBC7D8', '#FFE3EC'], ratio: 1.2 },
+  summer: { make: c => blossomSVG(c, '#FFD25E'), cols: ['#FFFFFF', '#FFE08A', '#FFC2D2'], ratio: 1 },
+  autumn: { make: c => leafFallSVG(c), cols: ['#E59A4E', '#D9653E', '#F2C14E'], ratio: 1.15 }
+};
+let skyLayer = null, skySeason = null;
 function sky() {
   const layer = h('div', { class: 'sky', 'aria-hidden': 'true' });
   const url = svgURL(STAR_SVG);
@@ -141,30 +151,47 @@ function sky() {
     const size = 6 + Math.round(rnd() * 12);
     layer.append(h('span', { style: `left:${(rnd() * 100).toFixed(1)}%;top:${(rnd() * 100).toFixed(1)}%;width:${size}px;height:${size}px;background-image:url("${url}");animation-delay:${(rnd() * 6).toFixed(1)}s;animation-duration:${(3 + rnd() * 4).toFixed(1)}s;--glow:${['#FFE9A8', '#FFD1E3', '#E4D6FF', '#FFFFFF'][i % 4]}` }));
   }
-  const season = SEASON_OF_MONTH[new Date().getMonth()];
-  const petalCols = { winter: ['#FFFFFF', '#E3ECF8', '#F7D9E3'], spring: ['#F7A8C4', '#FBC7D8', '#FFE3EC'], summer: ['#FFE08A', '#FFC2D2', '#FFFFFF'], autumn: ['#E59A4E', '#D9653E', '#F2C14E'] }[season];
   for (let i = 0; i < 16; i++) {
     const size = 10 + Math.round(rnd() * 10);
-    layer.append(h('b', { class: 'petal', style: `left:${(rnd() * 100).toFixed(1)}%;width:${size}px;height:${Math.round(size * 1.2)}px;background-image:url("${svgURL(petalSVG(petalCols[i % 3]))}");animation-delay:-${(rnd() * 22).toFixed(1)}s;animation-duration:${(16 + rnd() * 14).toFixed(1)}s;--sway:${(30 + rnd() * 60).toFixed(0)}px` }));
+    layer.append(h('b', { class: 'petal', 'data-size': size, style: `left:${(rnd() * 100).toFixed(1)}%;width:${size}px;height:${size}px;animation-delay:-${(rnd() * 22).toFixed(1)}s;animation-duration:${(16 + rnd() * 14).toFixed(1)}s;--sway:${(30 + rnd() * 60).toFixed(0)}px` }));
   }
-  [['#F7A8C4', '#C6B4F0'], ['#FFE08A', '#F2A672'], ['#A8D8F0', '#C6B4F0']].forEach(([a, b], i) => {
-    layer.append(h('em', { class: 'butterfly b' + i }));
-    layer.lastChild.innerHTML = butterflySVG(a, b);
-  });
   for (let i = 0; i < 60; i++) {
     layer.append(h('i', { style: `left:${(rnd() * 100).toFixed(1)}%;top:${(rnd() * 100).toFixed(1)}%;animation-delay:${(rnd() * 5).toFixed(1)}s` }));
   }
+  skyLayer = layer;
   return layer;
 }
+function setSkySeason(season) {
+  if (!skyLayer || season === skySeason) return;
+  skySeason = season;
+  const f = FALLING[season] || FALLING.spring;
+  const urls = f.cols.map(c => `url("${svgURL(f.make(c))}")`);
+  skyLayer.dataset.season = season;
+  skyLayer.querySelectorAll('.petal').forEach((el, i) => {
+    const size = Number(el.dataset.size) * (season === 'winter' ? .8 : 1);
+    el.style.width = size + 'px';
+    el.style.height = Math.round(size * f.ratio) + 'px';
+    el.style.backgroundImage = urls[i % urls.length];
+  });
+}
 
-// Kartların köşelerine çiçekli sarmaşık kıvrımları
-const DECORATED = '.login, .shelf-card, .calendar, .page, .future-card, .stats-card';
+// Kartların süsleri: takvim ve gün sayfalarında kenarlardan aşağı sarkan sarmaşıklar, diğerlerinde köşe kıvrımları
+const DECORATED = '.login, .shelf-card, .calendar, .page, .future-card, .stats-card, .colors-card';
+const HANGING = '.calendar, .page';
 function decorate(root) {
   for (const el of root.querySelectorAll(DECORATED)) {
     if (el.dataset.deco) continue;
     el.dataset.deco = '1';
-    const url = `url("${svgURL(flourishSVG(el.dataset.season || SEASON_OF_MONTH[new Date().getMonth()]))}")`;
+    const season = el.dataset.season || S.season || SEASON_OF_MONTH[new Date().getMonth()];
     const left = !el.classList.contains('right'), right = !el.classList.contains('left');
+    if (el.matches(HANGING)) {
+      el.classList.add('hung');
+      const seed = (el.classList.contains('right') ? 7 : 3) + season.length;
+      if (left) el.prepend(h('span', { class: 'hang-vine l', 'aria-hidden': 'true', style: `background-image:url("${svgURL(hangingVineSVG(season, seed))}")` }));
+      if (right) el.prepend(h('span', { class: 'hang-vine r', 'aria-hidden': 'true', style: `background-image:url("${svgURL(hangingVineSVG(season, seed + 5))}")` }));
+      continue;
+    }
+    const url = `url("${svgURL(flourishSVG(season))}")`;
     if (left) el.prepend(h('span', { class: 'flourish tl', 'aria-hidden': 'true', style: `background-image:${url}` }));
     if (right) el.prepend(h('span', { class: 'flourish tr', 'aria-hidden': 'true', style: `background-image:${url}` }));
   }
@@ -174,8 +201,10 @@ function vineStrip(season, cls = 'vine') {
   return h('div', { class: cls, 'aria-hidden': 'true', style: `background-image:url("${svgURL(vineSVG(season))}")` });
 }
 
-function shell(content, active) {
+function shell(content, active, season = SEASON_OF_MONTH[new Date().getMonth()]) {
   const p = profile();
+  S.season = season;
+  setSkySeason(season);
   const nav = h('nav', { class: 'tabs', 'aria-label': 'Görünüm' },
     h('a', { href: '#/yil/' + (S.demo ? DEMO_YEAR : new Date().getFullYear()), class: 'btn' + (active === 'yil' ? ' on' : '') }, 'Yıl'),
     h('a', { href: '#/ay/' + (S.demo ? DEMO_YEAR + '-12' : today().slice(0, 7)), class: 'btn' + (active === 'ay' ? ' on' : '') }, 'Ay'),
@@ -203,7 +232,6 @@ function shell(content, active) {
     h('a', { href: '#/yil/' + new Date().getFullYear(), class: 'brand' },
       orb({ emotions: { joy: 1, emb: 1, sad: 1, disgust: 1 } }, 34), h('span', null, 'Anı Küreleri')),
     nav, menu);
-  const season = SEASON_OF_MONTH[new Date().getMonth()];
   const banner = S.demo ? h('div', { class: 'demo-banner', role: 'note' },
     h('span', null, art('hope', 34), h('span', null, h('strong', null, 'Örnek yıl. '), 'Bu küreler gerçek verin değil; dolu bir yılın nasıl göründüğünü gösterir. Burada yaptığın değişiklikler kaydedilmez.')),
     h('button', { class: 'btn', onClick: exitDemo }, 'Örnekten çık')) : null;
@@ -617,7 +645,7 @@ function exportDialog({ title, size, render, filename, pdfFormat }) {
 async function viewMonth(mKey) {
   const [year, month] = mKey.split('-').map(Number);
   const id = ++S.renderId;
-  shell(loading(), 'ay');
+  shell(loading(), 'ay', SEASON_OF_MONTH[Number(mKey.slice(5, 7)) - 1]);
   const multi = S.store.profiles.length >= 2;
   const both = multi && S.mode === 'both';
   const people = both ? S.store.profiles : [profile()];
@@ -705,7 +733,7 @@ async function viewMonth(mKey) {
     divider(season),
     toggle,
     h('div', { class: 'month-layout' },
-      h('section', { class: 'card calendar', 'aria-label': 'Takvim' },
+      h('section', { class: 'card calendar', 'aria-label': 'Takvim', 'data-season': season },
         both ? h('div', { class: 'legend' }, people.map(p => h('span', null, art(p.animal, 30), p.name))) : null,
         h('div', { class: 'week' }, WEEK_SHORT.map(w => h('span', null, w))),
         h('div', { class: 'cells' + (both ? ' both' : '') }, cells)
@@ -725,7 +753,7 @@ async function viewMonth(mKey) {
       )
     )
   );
-  shell(content, 'ay');
+  shell(content, 'ay', season);
 }
 
 // ---------- gün ----------
@@ -733,7 +761,7 @@ async function viewMonth(mKey) {
 async function viewDay(date) {
   const p = profile();
   const id = ++S.renderId;
-  shell(loading(), 'gun');
+  shell(loading(), 'gun', SEASON_OF_MONTH[Number(date.slice(5, 7)) - 1]);
   const year = Number(date.slice(0, 4));
   const data = await S.store.loadYear(p.id, year);
   if (id !== S.renderId) return;
@@ -752,7 +780,7 @@ async function viewDay(date) {
       art('ennui', 88, { className: 'bob' }),
       h('h1', null, longDate(date)),
       h('p', { class: 'lead' }, 'Bu sayfa henüz yazılmadı. O gün geldiğinde küresini boyayabilirsin.'),
-      h('a', { class: 'btn gold', href: '#/gun/' + t }, 'Bugüne dön')), nav), 'gun');
+      h('a', { class: 'btn gold', href: '#/gun/' + t }, 'Bugüne dön')), nav), 'gun', season);
     return;
   }
 
@@ -769,7 +797,7 @@ async function viewDay(date) {
   const orbStand = h('div', { class: 'orb-stand' }, orbBox, h('div', { class: 'stand-top' }), h('div', { class: 'stand-stem' }));
   const coreBadge = h('span', { class: 'core-badge' }, 'Core Memory');
   const paintOrb = () => {
-    orbBox.replaceChildren(orb({ emotions: dr.emotions, core: dr.core, date }, 210, 'today'));
+    orbBox.replaceChildren(orb({ emotions: dr.emotions, core: dr.core, date }, 210, 'glass'));
     coreBadge.hidden = !dr.core;
   };
   const sliders = h('div', { class: 'sliders' });
@@ -879,16 +907,21 @@ async function viewDay(date) {
       viewDay(date);
     } catch (ex) { toast(ex.message, 'warn'); }
   } }, 'Küreyi boşalt') : null;
-  const exportBtn = saved ? h('button', { type: 'button', class: 'btn', onClick: () => exportDialog({
-    title: `${longDate(date)} sayfası`, size: 'A6 yatay · 148 × 105 mm (A5’in yarısı)', pdfFormat: 'a6l', filename: `ani-kuresi-${date}`,
+  const exportBtn = h('button', { type: 'button', class: 'btn gold', onClick: () => exportDialog({
+    title: `${longDate(date)} · gün özeti`, size: 'A6 yatay · 148 × 105 mm (A5’in yarısı)', pdfFormat: 'a6l', filename: `ani-kuresi-${date}`,
     render: async (theme, scale) => {
       let photoSrc = null;
-      if (saved.photo) { try { photoSrc = await S.store.photoURL(saved.photo); } catch (er) { /* fotoğrafsız devam */ } }
-      return renderDay({ date, entry: saved, profile: p, theme, photoSrc, scale });
+      if (dr.newPhoto) photoSrc = dr.newPhoto.url;
+      else if (dr.photo) { try { photoSrc = await S.store.photoURL(dr.photo); } catch (er) { /* fotoğrafsız devam */ } }
+      const entry = { emotions: dr.emotions, note: dr.note.trim(), caption: dr.caption.trim(), core: dr.core };
+      return renderDay({ date, entry, profile: p, theme, photoSrc, scale });
     }
-  }) }, dlIcon(), 'Sayfayı indir') : null;
+  }) }, dlIcon(), 'Gün özetini indir');
 
   const content = h('div', { class: 'stack' },
+    h('div', { class: 'day-tools' },
+      h('span', { class: 'muted' }, saved ? 'Bu sayfayı ajandana basmak için:' : 'Henüz kaydedilmedi; ekrandaki hâli basılır.'),
+      exportBtn),
     h('div', { class: 'book' },
       h('section', { class: 'page left', 'data-season': season },
         h('div', { class: 'page-head' },
@@ -900,15 +933,14 @@ async function viewDay(date) {
         coreBtn
       ),
       h('section', { class: 'page right', 'data-season': season },
-        h('span', { class: 'page-icon bob', 'aria-hidden': 'true' }, art('m' + (d.getMonth() + 1), 42)),
         fileIn, photoBox, caption,
         h('label', { for: 'note', class: 'h2' }, 'Günlük'), note,
-        h('div', { class: 'save-row' }, saveBtn, h('div', { class: 'save-side' }, exportBtn, clearBtn))
+        h('div', { class: 'save-row' }, saveBtn, h('div', { class: 'save-side' }, clearBtn))
       )
     ),
     nav
   );
-  shell(content, 'gun');
+  shell(content, 'gun', season);
 }
 
 // ---------- yönlendirme ----------

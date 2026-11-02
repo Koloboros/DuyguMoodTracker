@@ -343,3 +343,73 @@ export function art(name, size, opts = {}) {
 export function artURL(name) {
   return svgURL(svgFor(name));
 }
+
+// ---------- mevsimlik düşen süsler ----------
+
+export function snowSVG(color) {
+  const arm = a => `<g transform="rotate(${a} 12 12)"><path d="M12 2 V22 M12 5 L9.5 3 M12 5 L14.5 3 M12 19 L9.5 21 M12 19 L14.5 21" stroke="${color}" stroke-width="1.6" stroke-linecap="round" fill="none"/></g>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">${arm(0)}${arm(60)}${arm(120)}<circle cx="12" cy="12" r="1.6" fill="${color}"/></svg>`;
+}
+export function leafFallSVG(color) {
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 28"><path d="M12 1 C15 5 21 6 21 12 C21 18 16 22 12 25 C8 22 3 18 3 12 C3 6 9 5 12 1Z" fill="${color}"/><path d="M12 3 V27 M12 10 L7 7 M12 10 L17 7 M12 16 L6 13 M12 16 L18 13" stroke="#fff" stroke-opacity=".45" stroke-width="1" fill="none" stroke-linecap="round"/></svg>`;
+}
+export function blossomSVG(color, center) {
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">${flower(12, 12, 8, color, center)}</svg>`;
+}
+
+// ---------- kartların kenarından aşağı sarkan sarmaşık ----------
+
+export function hangingVineSVG(season, seed = 1) {
+  const s = SEASON[season] || SEASON.spring;
+  let st = seed * 9301 + 49297;
+  const r = () => { st = (st * 9301 + 49297) % 233280; return st / 233280; };
+  const H = 430, phase = r() * 3;
+  const xAt = y => 16 + Math.sin(y / 52 + phase) * 9 * (1 - y / (H * 1.25)) + (y / H) * 4;
+  const pts = [];
+  for (let y = 0; y <= H - 30; y += 15) pts.push([xAt(y), y]);
+  const pathOf = (from, to) => {
+    const seg = pts.slice(from, to + 1);
+    let d = `M${seg[0][0].toFixed(1)} ${seg[0][1]}`;
+    for (let i = 1; i < seg.length - 1; i++) {
+      const mx = (seg[i][0] + seg[i + 1][0]) / 2, my = (seg[i][1] + seg[i + 1][1]) / 2;
+      d += ` Q${seg[i][0].toFixed(1)} ${seg[i][1]} ${mx.toFixed(1)} ${my}`;
+    }
+    const last = seg[seg.length - 1];
+    return d + ` L${last[0].toFixed(1)} ${last[1]}`;
+  };
+  const n = pts.length - 1, a = Math.floor(n / 3), b = Math.floor(n * 2 / 3);
+  let out = `<path d="${pathOf(0, a)}" stroke="${s.stem}" stroke-width="3.6" fill="none" stroke-linecap="round"/>
+    <path d="${pathOf(a, b)}" stroke="${s.stem}" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+    <path d="${pathOf(b, n)}" stroke="${s.stem}" stroke-width="1.4" fill="none" stroke-linecap="round"/>`;
+  // köşeden yana uzanan kısa dal
+  out += `<path d="M14 2 C30 0 46 4 64 10 C72 13 80 12 86 8" stroke="${s.stem}" stroke-width="2" fill="none" stroke-linecap="round"/>
+    ${leaf(34, 3, -10, s.leaf, 12)}${leaf(52, 7, 15, s.leaf2, 11)}${leaf(70, 12, -25, s.leaf, 10)}${flower(84, 8, 4.2, s.petal, s.center)}`;
+  // yapraklar
+  let side = 1;
+  for (let y = 16; y < H - 30; y += 13 + r() * 8) {
+    const x = xAt(y), t = y / H, len = 21 - t * 9 + r() * 4;
+    const rot = side > 0 ? -30 + r() * 35 : 180 + 30 - r() * 35;
+    out += leaf(x, y, rot, r() < .5 ? s.leaf : s.leaf2, len);
+    if (r() < .45) out += leaf(x, y + 3, side > 0 ? 200 - r() * 30 : -20 + r() * 30, r() < .5 ? s.leaf2 : s.leaf, len * .6);
+    side *= -1;
+  }
+  // kıvrık filizler
+  for (const y of [95 + r() * 20, 265 + r() * 20]) {
+    const x = xAt(y);
+    out += `<path d="M${x.toFixed(1)} ${y.toFixed(0)} c8 2 14 8 12 15 c-1 5 -7 6 -9 2 c-2 -3 1 -6 3 -4" stroke="${s.stem}" stroke-width="1.2" fill="none" stroke-linecap="round"/>`;
+  }
+  // çiçekler, çanlar, meyveler, tomurcuklar
+  const at = y => [xAt(y), y];
+  let [fx, fy] = at(58); out += rose(fx + 4, fy, 10, s.rose, s.roseDark);
+  [fx, fy] = at(132); out += flower(fx - 7, fy, 7.5, s.petal, s.center);
+  [fx, fy] = at(176); out += `<circle cx="${(fx + 7).toFixed(1)}" cy="${fy}" r="2.6" fill="${s.berry}"/><circle cx="${(fx + 10.5).toFixed(1)}" cy="${fy + 3}" r="2.2" fill="${s.berry}"/><circle cx="${(fx + 6).toFixed(1)}" cy="${fy + 4.5}" r="2" fill="${s.berry}"/>`;
+  [fx, fy] = at(215); out += bell(fx + 1, fy, 9, s.bell, s.stem) + bell(fx + 7, fy + 4, 6, s.bell, s.stem);
+  [fx, fy] = at(250); out += rose(fx - 2, fy, 8.5, s.rose, s.roseDark);
+  [fx, fy] = at(305); out += flower(fx + 7, fy, 6.5, s.petal, s.center);
+  [fx, fy] = at(190); out += flower(fx - 8, fy, 5, s.petal, s.center);
+  [fx, fy] = at(338); out += bell(fx, fy, 7, s.bell, s.stem);
+  [fx, fy] = at(372); out += bud(fx + 3, fy, 20, s.rose, s.leaf);
+  [fx, fy] = at(398); out += bud(fx - 2, fy + 2, -15, s.petal, s.leaf);
+  out += star(46, 40 + r() * 30, 3.4, '#FFF6D6') + star(40, 200 + r() * 40, 2.6, '#FFE9A8') + star(44, 330 + r() * 30, 2.2, '#FFF6D6');
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="92" height="${H}" viewBox="0 0 92 ${H}">${out}</svg>`;
+}

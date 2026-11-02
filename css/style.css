@@ -52,14 +52,6 @@ button { font: inherit; }
 .sky span { position: absolute; background-size: contain; background-repeat: no-repeat; opacity: 0; animation: twinkle 5s ease-in-out infinite; filter: drop-shadow(0 0 6px var(--glow)); }
 .sky i { position: absolute; width: 3px; height: 3px; border-radius: 50%; background: #FFF6DA; box-shadow: 0 0 8px 3px rgba(255, 230, 170, .7); opacity: 0; animation: glitter 4s ease-in-out infinite; }
 .sky .petal { position: absolute; top: -40px; background-size: contain; background-repeat: no-repeat; opacity: .7; animation: fall 22s linear infinite; }
-.sky .butterfly { position: absolute; width: 38px; height: 30px; filter: drop-shadow(0 0 8px rgba(255, 220, 255, .35)); }
-.sky .butterfly svg { width: 100%; height: 100%; overflow: visible; }
-.sky .butterfly .wl, .sky .butterfly .wr { transform-box: fill-box; animation: flap .35s ease-in-out infinite alternate; }
-.sky .butterfly .wl { transform-origin: right center; }
-.sky .butterfly .wr { transform-origin: left center; }
-.sky .butterfly.b0 { left: 6%; top: 30%; animation: drift0 26s ease-in-out infinite; }
-.sky .butterfly.b1 { left: 82%; top: 18%; animation: drift1 31s ease-in-out infinite; }
-.sky .butterfly.b2 { left: 60%; top: 72%; animation: drift2 28s ease-in-out infinite; width: 30px; height: 24px; }
 @keyframes twinkle { 0%, 100% { opacity: 0; transform: scale(.5) rotate(0); } 50% { opacity: .95; transform: scale(1) rotate(25deg); } }
 @keyframes glitter { 0%, 100% { opacity: 0; } 45%, 55% { opacity: .9; } }
 @keyframes fall {
@@ -69,10 +61,6 @@ button { font: inherit; }
   75% { transform: translate(calc(var(--sway) * -1), 85vh) rotate(270deg); }
   100% { transform: translate(0, 115vh) rotate(360deg); }
 }
-@keyframes flap { from { transform: scaleX(1); } to { transform: scaleX(.35); } }
-@keyframes drift0 { 0%, 100% { transform: translate(0, 0) rotate(-8deg); } 25% { transform: translate(14vw, -8vh) rotate(10deg); } 50% { transform: translate(26vw, 6vh) rotate(-4deg); } 75% { transform: translate(10vw, 12vh) rotate(8deg); } }
-@keyframes drift1 { 0%, 100% { transform: translate(0, 0) rotate(8deg); } 30% { transform: translate(-18vw, 10vh) rotate(-10deg); } 60% { transform: translate(-8vw, 26vh) rotate(6deg); } }
-@keyframes drift2 { 0%, 100% { transform: translate(0, 0); } 40% { transform: translate(-20vw, -14vh) rotate(-12deg); } 70% { transform: translate(-6vw, -24vh) rotate(8deg); } }
 @keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
 @keyframes breathe { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.35); } }
 @keyframes orbpulse { 0% { box-shadow: 0 0 0 .08em #FFD27A, 0 0 0 0 rgba(255,210,122,.6); } 70% { box-shadow: 0 0 0 .08em #FFD27A, 0 0 0 .5em rgba(255,210,122,0); } 100% { box-shadow: 0 0 0 .08em #FFD27A, 0 0 0 0 rgba(255,210,122,0); } }
@@ -92,7 +80,6 @@ button { font: inherit; }
   animation: glitter 3.2s ease-in-out infinite;
 }
 @media (prefers-reduced-motion: reduce) {
-  .bob, .orb-today, .orb.pulse, .sky span, .sky i, .sky .petal, .sky .butterfly, .sky .butterfly .wl, .sky .butterfly .wr, .orb.glitter::after { animation: none; }
   .sky span { opacity: .6; } .sky .petal { display: none; }
 }
 
@@ -100,7 +87,13 @@ button { font: inherit; }
 .vine { position: relative; z-index: 1; height: 48px; background-repeat: repeat-x; background-size: 200px 48px; opacity: .85; }
 .flourish { position: absolute; top: -28px; left: -30px; width: 160px; height: 118px; background-size: contain; background-repeat: no-repeat; pointer-events: none; z-index: 2; opacity: .9; }
 .flourish.tr { left: auto; right: -30px; transform: scaleX(-1); }
-[data-deco].card:not(.page):not(.login) { padding-top: 62px; }
+[data-deco].card:not(.page):not(.login):not(.hung) { padding-top: 62px; }
+.hang-vine { position: absolute; top: -26px; left: -34px; width: 124px; height: 580px; background-size: 124px 580px; background-repeat: no-repeat; pointer-events: none; z-index: 2; filter: drop-shadow(0 4px 8px rgba(0, 0, 0, .3)); transform-origin: top center; animation: sway 7s ease-in-out infinite; }
+.hang-vine.r { left: auto; right: -34px; transform: scaleX(-1); animation-name: sway-r; animation-delay: -3s; }
+@keyframes sway { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(1.4deg); } }
+@keyframes sway-r { 0%, 100% { transform: scaleX(-1) rotate(0deg); } 50% { transform: scaleX(-1) rotate(1.4deg); } }
+.hung { padding-left: 40px; padding-right: 40px; }
+.day-tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 12px; margin-bottom: -8px; }
 .login[data-deco] { padding-top: 64px; }
 .divider { height: 40px; background-repeat: no-repeat; background-position: center; background-size: 320px 40px; margin: -6px 0; opacity: .85; }
 
@@ -314,7 +307,6 @@ input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; hei
 input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 26px; height: 26px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff 0 18%, currentColor 60%); border: 2px solid #fff; box-shadow: 0 0 14px currentColor; cursor: pointer; }
 input[type=range]::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff 0 18%, currentColor 60%); border: 2px solid #fff; box-shadow: 0 0 14px currentColor; cursor: pointer; }
 .core-toggle { align-self: flex-start; }
-.page-icon { position: absolute; right: 34px; top: 26px; }
 .photo-slot { display: flex; flex-direction: column; align-items: center; gap: 4px; padding-top: 18px; }
 .photo-slot .polaroid { width: min(100%, 380px); }
 .tape { position: absolute; left: 50%; top: -14px; width: 100px; height: 28px; margin-left: -50px; background: rgba(255, 170, 200, .55); transform: rotate(4deg); border-radius: 2px; }
@@ -377,10 +369,14 @@ textarea.lined { width: 100%; min-height: 230px; resize: vertical; padding: 2px 
   .who { min-height: 46px; }
   .vine { height: 36px; background-size: 150px 36px; }
   .divider { height: 30px; background-size: 240px 30px; }
-  .sky .butterfly { display: none; }
   .flourish { width: 104px; height: 77px; top: -16px; left: -16px; }
   .flourish.tr { right: -16px; }
-  [data-deco].card:not(.page):not(.login) { padding-top: 44px; }
+  [data-deco].card:not(.page):not(.login):not(.hung) { padding-top: 44px; }
+  .hang-vine { top: -16px; left: -18px; width: 74px; height: 346px; background-size: 74px 346px; }
+  .hang-vine.r { right: -18px; }
+  .hung { padding-left: 22px; padding-right: 22px; }
+  .calendar.hung { padding-left: 14px; padding-right: 14px; }
+  .day-tools { justify-content: space-between; }
   .card { padding: 20px 18px; border-radius: 24px; }
   .hero { gap: 18px; }
   .pedestal { height: 110px; }
@@ -424,5 +420,4 @@ textarea.lined { width: 100%; min-height: 230px; resize: vertical; padding: 2px 
   .page-head { padding: 0 12px; }
   .big-orb .orb { font-size: 170px !important; }
   .slider { grid-template-columns: 92px minmax(0, 1fr) 42px; }
-  .page-icon { display: none; }
 }
