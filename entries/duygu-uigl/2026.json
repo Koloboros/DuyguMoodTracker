@@ -10,5 +10,16 @@
   "core": false,
   "photo": "photos/duygu-uigl/2026-11-01-mvyapvhe.jpg",
   "updatedAt": "2026-11-01T20:41:58.441Z"
+ },
+ "2026-11-02": {
+  "emotions": {
+   "tired": 30,
+   "longing": 30
+  },
+  "note": "",
+  "caption": "",
+  "core": false,
+  "photo": "photos/duygu-uigl/2026-11-02-mvzh3sjh.jpg",
+  "updatedAt": "2026-11-02T16:28:32.018Z"
  }
 }
