@@ -2,10 +2,11 @@
 
 Her gün bir küre, her küre bir anı. Günün duygularını oranlarıyla seçip bir küreyi boyadığın, not ve fotoğraf eklediğin küçük, masalsı bir günlük.
 
-- **Yıl, ay ve gün görünümleri.** Yıl rafları, takvim ve açık bir günlük sayfası.
+- **Anı arşivi.** Bütün yıl tek ekranda: 365 cam küre, mevsim mevsim dört arşiv kulesinde. Ay takvimi ve günlük sayfası da aynı gece temasında.
 - **On beş duygu karakteri ve kendi duyguların.** Birden fazla duygu seçip oranlarını ayarlayabilirsin. İstediğin kadar yeni duygu (isim, renk, yüz) ekleyebilirsin.
 - **Core Memory.** Özel günler altın halkayla parlar ve ayrı bir rafta toplanır.
 - **Not ve fotoğraf.** Fotoğraflar yüklenirken küçültülür.
+- **Basılabilir sayfalar.** Günlük sayfa A6 (A5'in yarısı), ay özeti ve yıl arşivi A5 olarak PDF ya da PNG indirilebilir. Açık (baskı dostu) ya da koyu renk seçilebilir.
 - **Dolu bir yıl örneği.** Hesap menüsünden, gerçek veriye dokunmadan 365 küresi dolu bir yılı gezebilirsin.
 - **Birden fazla hesap ve "Birlikte" görünümü.** Her hesap kendi hayvan avatarını seçer. Aynı ayı yan yana görebilirsiniz.
 

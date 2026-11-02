@@ -1,6 +1,7 @@
 import { EMOTIONS, EMO, ANIMALS, ANIMAL, SEASON_OF_MONTH, CUSTOM_FACES, SWATCHES, registerCustom, art, artURL, vineSVG, flourishSVG, dividerSVG, petalSVG, butterflySVG, STAR_SVG, svgURL } from './art.js';
 import { DemoStore, DEMO_YEAR } from './demo.js';
 import { Repo, Store, shrinkPhoto } from './data.js';
+import { renderDay, renderMonth, renderYear, toPDF, toPNG, download } from './export.js';
 
 // ---------- küçük yardımcılar ----------
 
@@ -69,36 +70,35 @@ function emoList(entry) {
   return Object.entries(entry.emotions).filter(([id, w]) => EMO[id] && w > 0).sort((a, b) => b[1] - a[1]);
 }
 
-function orbCss(entry, size, mode) {
-  let st = `width:${size}px;height:${size}px;`;
+function orbCss(entry, mode) {
   const em = emoList(entry);
   if (!em.length) {
-    st += 'background:radial-gradient(circle at 33% 27%, #fff 0, rgba(255,255,255,.7) 18%, rgba(255,255,255,0) 44%), #F3E9D6;';
-    if (mode === 'today') st += 'border:2px dashed #D9A53A;';
-    else if (mode === 'future') st += 'border:1.5px dashed #E2D2B4;opacity:.45;';
-    else st += 'border:1.5px solid #E2D2B4;';
+    let st = 'background:radial-gradient(circle at 32% 26%, rgba(255,255,255,.5) 0, rgba(255,255,255,.1) 22%, rgba(255,255,255,0) 46%), radial-gradient(circle at 50% 50%, rgba(255,255,255,.03) 48%, rgba(214,190,255,.18) 100%);';
+    if (mode === 'today') st += 'box-shadow:0 0 0 .08em #FFD27A, 0 0 .6em rgba(255,210,122,.6);';
+    else if (mode === 'future') st += 'box-shadow:inset 0 0 0 1px rgba(214,190,255,.14);opacity:.45;';
+    else st += 'box-shadow:inset 0 0 0 1px rgba(214,190,255,.3);';
     return st;
   }
   const cols = em.map(([id]) => EMO[id].c);
   const sum = em.reduce((a, [, w]) => a + w, 0);
   let bg;
-  if (cols.length === 1) bg = `radial-gradient(circle at 50% 62%, ${cols[0]}, ${cols[0]}E6 80%)`;
+  if (cols.length === 1) bg = `radial-gradient(circle at 50% 62%, ${cols[0]} 0%, ${cols[0]} 55%, ${cols[0]}B0 100%)`;
   else {
     let acc = 0;
     const stops = em.map(([id, w]) => { const span = w / sum * 100; const s = `${EMO[id].c} ${(acc + span / 2).toFixed(1)}%`; acc += span; return s; });
     const rot = entry.date ? (Number(entry.date.slice(-2)) * 47) % 360 : 30;
-    bg = `conic-gradient(from ${rot}deg, ${cols[cols.length - 1]} 0%, ${stops.join(', ')}, ${cols[0]} 100%)`;
+    bg = `conic-gradient(from ${rot}deg, ${cols[cols.length - 1]} 0%, ${stops.join(', ')}, ${cols[cols.length - 1]} 100%)`;
   }
-  const m = cols[0];
-  let shadow = `0 ${Math.round(size / 7)}px ${Math.round(size / 2.6)}px ${m}55, inset -${Math.max(2, Math.round(size / 9))}px -${Math.max(2, Math.round(size / 7))}px ${Math.round(size / 4)}px rgba(59,42,58,.22), inset ${Math.max(1, Math.round(size / 14))}px ${Math.max(1, Math.round(size / 12))}px ${Math.round(size / 5)}px rgba(255,255,255,.35)`;
-  if (entry.core) shadow = `0 0 0 ${Math.max(2, Math.round(size / 22))}px #FFFBF2, 0 0 0 ${Math.max(3, Math.round(size / 11))}px #D9A53A, 0 0 ${Math.round(size / 2)}px rgba(217,165,58,.55), ${shadow}`;
-  return st + `background:radial-gradient(circle at 32% 25%, #fff 0, rgba(255,255,255,.75) 9%, rgba(255,255,255,0) 30%), ${bg};box-shadow:${shadow};`;
+  let shadow = `0 0 .55em ${cols[0]}B3, 0 .2em .3em rgba(6,0,20,.6), inset 0 0 .22em rgba(255,255,255,.3)`;
+  if (entry.core) shadow = `0 0 0 .07em #FFF3C4, 0 0 .9em rgba(255,214,110,.85), ${shadow}`;
+  return `background:radial-gradient(circle at 32% 24%, rgba(255,255,255,.98) 0, rgba(255,255,255,.6) 7%, rgba(255,255,255,0) 24%), radial-gradient(circle at 66% 80%, rgba(255,255,255,.45) 0, rgba(255,255,255,0) 26%), radial-gradient(circle at 48% 46%, rgba(255,255,255,0) 52%, rgba(18,6,40,.55) 100%), ${bg};box-shadow:${shadow};`;
 }
 
 function orb(entry, size, mode) {
   const filled = emoList(entry).length > 0;
   const el = h('span', { class: 'orb' + (mode === 'today' && !filled ? ' orb-today' : '') + (filled && size >= 60 ? ' glitter' : '') });
-  el.style.cssText = orbCss(entry, size, mode);
+  el.style.cssText = orbCss(entry, mode);
+  if (size) el.style.fontSize = size + 'px';
   return el;
 }
 
@@ -411,7 +411,39 @@ function viewWho() {
     )));
 }
 
-// ---------- yıl ----------
+// ---------- yıl: anı arşivi ----------
+
+const SHORT_M = ['OCA', 'ŞUB', 'MAR', 'NİS', 'MAY', 'HAZ', 'TEM', 'AĞU', 'EYL', 'EKİ', 'KAS', 'ARA'];
+const TOWER_VINE = `<svg class="tower-vine" aria-hidden="true" viewBox="0 0 34 460" preserveAspectRatio="none">
+  <path d="M17 0 C4 40 30 80 17 120 C4 160 30 200 17 240 C4 280 30 320 17 360 C4 400 30 440 17 460" stroke="#7FBF8A" stroke-width="2.4" fill="none" vector-effect="non-scaling-stroke"/>
+  <ellipse cx="8" cy="60" rx="7" ry="3.4" fill="#8FD39A" transform="rotate(-30 8 60)"/><ellipse cx="27" cy="150" rx="7" ry="3.4" fill="#A6E0AE" transform="rotate(30 27 150)"/>
+  <ellipse cx="8" cy="270" rx="7" ry="3.4" fill="#8FD39A" transform="rotate(-30 8 270)"/><ellipse cx="27" cy="380" rx="7" ry="3.4" fill="#A6E0AE" transform="rotate(30 27 380)"/>
+  <circle cx="22" cy="100" r="5" fill="#FF9FC6"/><circle cx="22" cy="100" r="2" fill="#FFE08A"/>
+  <circle cx="11" cy="210" r="5" fill="#FFE08A"/><circle cx="11" cy="210" r="2" fill="#FF9F6B"/>
+  <circle cx="23" cy="320" r="5" fill="#C9B2FF"/><circle cx="23" cy="320" r="2" fill="#FFE08A"/>
+  <circle cx="12" cy="430" r="5" fill="#FF9FC6"/><circle cx="12" cy="430" r="2" fill="#FFE08A"/>
+</svg>`;
+
+// Arşivdeki küreler için üzerine gelince açılan küçük kart
+let tipEl = null;
+function orbTip(target, entry, date) {
+  if (!tipEl) { tipEl = h('div', { class: 'orb-tip', role: 'tooltip' }); document.body.append(tipEl); }
+  const txt = entry ? (entry.caption || entry.note || '') : '';
+  tipEl.replaceChildren(
+    orb(entry ? { ...entry, date } : null, 40, entry ? 'fill' : 'empty'),
+    h('span', null,
+      h('strong', null, `${WEEKDAYS[weekIdx(parseYmd(date))]} · ${longDate(date)}`),
+      h('span', { class: 'hand' }, txt ? (txt.length > 70 ? txt.slice(0, 70) + '…' : txt) : (entry ? emoList(entry).map(([id]) => EMO[id].label).join(', ') : 'henüz boş'))));
+  const r = target.getBoundingClientRect();
+  tipEl.classList.add('show');
+  const tw = tipEl.offsetWidth, th = tipEl.offsetHeight;
+  let x = r.left + r.width / 2 - tw / 2, y = r.top - th - 12;
+  x = Math.max(8, Math.min(window.innerWidth - tw - 8, x));
+  if (y < 8) y = r.bottom + 12;
+  tipEl.style.left = x + 'px'; tipEl.style.top = y + 'px';
+}
+function hideTip() { if (tipEl) tipEl.classList.remove('show'); }
+window.addEventListener('scroll', hideTip, { passive: true });
 
 async function viewYear(year) {
   const p = profile();
@@ -424,68 +456,160 @@ async function viewYear(year) {
   const entries = Object.entries(data).map(([date, e]) => ({ ...e, date })).sort((a, b) => a.date.localeCompare(b.date));
   const photos = entries.filter(e => e.photo).length;
   const cores = entries.filter(e => e.core);
-  const startMonth = (p.createdAt || '').slice(0, 7);
+  const isThisYear = String(year) === t.slice(0, 4);
 
-  const months = MONTHS.map((name, mi) => {
-    const mKey = `${year}-${pad(mi + 1)}`;
-    const mEntries = entries.filter(e => e.date.startsWith(mKey));
-    const season = SEASON_OF_MONTH[mi];
-    const blank = !mEntries.length && mKey < startMonth;
-    const days = [];
-    if (!blank) for (let d = 1; d <= daysIn(year, mi + 1); d++) {
-      const date = `${mKey}-${pad(d)}`;
-      const e = data[date] ? { ...data[date], date } : null;
-      days.push(h('span', { title: longDate(date) }, orb(e, 22, date === t ? 'today' : (date > t ? 'future' : 'empty'))));
-    }
-    return h('a', { href: '#/ay/' + mKey, class: 'month' + (blank ? ' blank' : '') },
-      vineStrip(season, 'vine card-vine'),
-      h('div', { class: 'month-head' },
-        h('span', { class: 'badge', style: `background:${SEASON_TINT[season]}` }, art('m' + (mi + 1), 32)),
-        h('span', { class: 'month-title' }, h('strong', null, name),
-          h('small', null, mEntries.length ? `${mEntries.length} küre${mEntries.some(e => e.photo) ? ' · ' + mEntries.filter(e => e.photo).length + ' fotoğraf' : ''}` : (mKey === t.slice(0, 7) ? 'bu ay' : '')))),
-      blank ? h('span', { class: 'unwritten' }, 'henüz yazılmamış sayfa') : h('div', { class: 'mini-grid' }, days)
-    );
+  // kuleler: her biri bir mevsim, her ay 4 raf × 8 küre
+  const COLS = 8;
+  const towers = [0, 1, 2, 3].map(ti => {
+    const months = [0, 1, 2].map(k => {
+      const mi = ti * 3 + k;
+      const mKey = `${year}-${pad(mi + 1)}`;
+      const n = daysIn(year, mi + 1);
+      const rows = [];
+      for (let r0 = 0; r0 < 4; r0++) {
+        const slots = [];
+        for (let c = 0; c < COLS; c++) {
+          const d = r0 * COLS + c + 1;
+          if (d > n) { slots.push(h('span', { class: 'tslot empty-slot' })); continue; }
+          const date = `${mKey}-${pad(d)}`;
+          const e = data[date] ? { ...data[date], date } : null;
+          const f = (.7 + .3 * Math.sin(Math.PI * (c + .5) / COLS)) * (e && e.core ? 1.22 : 1);
+          const mode = date === t ? 'today' : (date > t ? 'future' : 'empty');
+          const o = orb(e, null, mode);
+          if (e && e.core) o.classList.add('pulse');
+          o.style.setProperty('--f', f.toFixed(3));
+          const attrs = { class: 'tslot', 'data-date': date, 'aria-label': longDate(date), style: `opacity:${(.8 + .2 * Math.sin(Math.PI * (c + .5) / COLS)).toFixed(2)}` };
+          const slot = date > t ? h('span', attrs, o) : h('a', { ...attrs, href: '#/gun/' + date }, o);
+          slot.addEventListener('mouseenter', () => orbTip(slot, e, date));
+          slot.addEventListener('focus', () => orbTip(slot, e, date));
+          slot.addEventListener('mouseleave', hideTip);
+          slot.addEventListener('blur', hideTip);
+          slots.push(slot);
+        }
+        rows.push(h('div', { class: 'trow' }, h('div', { class: 'tgrid' }, slots), h('div', { class: 'rail' })));
+      }
+      return h('div', { class: 'tmonth' }, h('a', { class: 'tlabel', href: '#/ay/' + mKey, 'aria-label': MONTHS[mi] + ' takvimi' }, SHORT_M[mi]), rows);
+    });
+    const body = h('div', { class: 'tower-body' }, months);
+    body.insertAdjacentHTML('afterbegin', TOWER_VINE);
+    return h('div', { class: 'tower' + (ti === 0 || ti === 3 ? ' outer' : '') },
+      h('div', { class: 'tower-cap' }, h('span', { class: 'plaque' }, `${MONTHS[ti * 3].toLocaleUpperCase('tr')} – ${MONTHS[ti * 3 + 2].toLocaleUpperCase('tr')}`)),
+      body,
+      h('div', { class: 'plinth' }));
   });
 
-  const { totals, days } = emotionTotals(entries);
-  const top = Object.values(EMO).filter(e => totals[e.id] > 0).sort((a, b) => totals[b.id] - totals[a.id]).slice(0, 5);
-  const maxT = top.length ? totals[top[0].id] : 1;
+  // core memory kürsüsü
+  const shownCores = cores.slice(0, 12);
+  const coreSize = shownCores.length > 9 ? 32 : (shownCores.length > 6 ? 40 : 46);
+  const pedestal = h('div', { class: 'pedestal-wrap' },
+    h('span', { class: 'ped-title' }, 'Core Memories'),
+    h('div', { class: 'pedestal' },
+      h('div', { class: 'ped-back' }),
+      h('div', { class: 'ped-orbs' }, shownCores.length
+        ? shownCores.map(e => { const o = orb(e, coreSize); o.classList.add('pulse'); return h('a', { href: '#/gun/' + e.date, class: 'ped-orb', title: longDate(e.date) + (e.caption ? ' · ' + e.caption : '') }, o); })
+        : [0, 1, 2].map(() => h('span', { class: 'ped-orb', title: 'sıradaki core memory' }, orb(null, coreSize, 'future')))),
+      h('div', { class: 'ped-front' }),
+      h('div', { class: 'ped-stem' })),
+    cores.length > shownCores.length ? h('small', { class: 'muted' }, `+${cores.length - shownCores.length} core memory daha`) : null);
 
-  const isThisYear = String(year) === t.slice(0, 4);
+  const { totals, days } = emotionTotals(entries);
+  const keys = Object.values(EMO).filter(e => totals[e.id] > 0).sort((a, b) => totals[b.id] - totals[a.id]);
+  const grand = keys.reduce((a, e) => a + totals[e.id], 0) || 1;
+
+  const exportBtn = h('button', { class: 'btn', onClick: () => exportDialog({
+    title: `${year} anı arşivi`, size: 'A5 · 148 × 210 mm', pdfFormat: 'a5', filename: `ani-arsivi-${year}`,
+    render: (theme, scale) => renderYear({ year, entries, profile: p, theme, today: t, scale })
+  }) }, dlIcon(), 'Yılı indir');
+
   const content = h('div', { class: 'stack' },
     h('section', { class: 'hero' },
       h('div', { class: 'hero-text' },
+        h('span', { class: 'hand kicker' }, 'Anı arşivi'),
         h('div', { class: 'year-switch' },
           h('a', { class: 'arrow', href: '#/yil/' + (year - 1), 'aria-label': 'Önceki yıl' }, '‹'),
-          h('h1', null, String(year)),
+          h('h1', { class: 'glow-title' }, String(year)),
           h('a', { class: 'arrow', href: '#/yil/' + (year + 1), 'aria-label': 'Sonraki yıl' }, '›')),
         h('p', { class: 'lead' }, entries.length
-          ? [`${p.name}, bu yıl `, h('strong', null, `${entries.length} küre`), photos ? [', ', h('strong', null, `${photos} fotoğraf`)] : '', cores.length ? [' ve ', h('strong', null, `${cores.length} core memory`)] : '', ' biriktirdin.']
-          : (isThisYear ? `Bahçen yeni filizlendi, ${p.name}. İlk küreni boyayınca raflar dolmaya başlayacak.` : 'Bu yılın sayfaları boş.'))),
-      isThisYear ? h('a', { class: 'btn big gold', href: '#/gun/' + t }, orb(data[t] ? { ...data[t], date: t } : null, 24, 'today'), data[t] ? 'Bugünün küresi' : 'Bugünün küresini boya') : null
-    ),
-    divider(SEASON_OF_MONTH[new Date().getMonth()]),
-    h('section', { class: 'months', 'aria-label': 'Aylar' }, months),
-    h('div', { class: 'duo' },
-      h('section', { class: 'card shelf-card' },
-        h('div', { class: 'card-head' }, h('h2', null, 'Core Memories'), h('small', null, 'yılın en parlak günleri')),
-        h('div', { class: 'core-row' }, cores.length
-          ? cores.map((e, i) => h('a', { href: '#/gun/' + e.date, class: 'core' }, h('span', { class: 'bob', style: `animation-delay:${i * .4}s` }, orb(e, 72)), h('span', { class: 'hand' }, shortDate(e.date))))
-          : [0, 1, 2].map(i => h('span', { class: 'core' }, h('span', { class: 'bob', style: `animation-delay:${i * .5}s` }, orb(null, 72, 'future')), h('span', { class: 'hand' }, 'sıradaki…')))),
-        h('div', { class: 'shelf' })
-      ),
-      h('section', { class: 'card stats-card' },
-        h('div', { class: 'card-head' }, h('h2', null, 'Bu yılın duyguları'), h('small', null, 'en sık uğrayanlar')),
-        top.length ? h('div', { class: 'stats' }, top.map((e, i) => h('div', { class: 'stat' },
-          h('span', { class: 'bob', style: `animation-delay:${i * .3}s` }, art(e.id, 54)),
-          h('span', { class: 'stat-name' }, e.label),
-          h('span', { class: 'bar' }, h('span', { style: `width:${Math.max(6, totals[e.id] / maxT * 100)}%;background:${e.c}` })),
-          h('span', { class: 'stat-pct' }, '%' + Math.round(totals[e.id] / days * 100))
-        ))) : h('p', { class: 'muted' }, 'Küreler biriktikçe hangi duyguların sana en çok uğradığını burada göreceksin.')
-      )
-    )
+          ? [`${p.name}, bu yıl rafa `, h('strong', null, `${entries.length} küre`), photos ? [', ', h('strong', null, `${photos} fotoğraf`)] : '', cores.length ? [' ve ', h('strong', { class: 'gold-text' }, `${cores.length} core memory`)] : '', ' koydun. Bir küreye dokun, o günün sayfası açılsın.']
+          : (isThisYear ? `Arşivin seni bekliyor, ${p.name}. İlk küreni boyayınca raflar ışımaya başlayacak.` : 'Bu yılın rafları boş.')),
+        h('div', { class: 'hero-actions' },
+          isThisYear ? h('a', { class: 'btn big gold', href: '#/gun/' + t }, orb(data[t] ? { ...data[t], date: t } : null, 24, 'today'), data[t] ? 'Bugünün küresi' : 'Bugünün küresini boya') : null,
+          exportBtn)),
+      pedestal),
+    h('section', { class: 'archive', 'aria-label': `${year} anı arşivi` },
+      h('div', { class: 'far-wall', 'aria-hidden': 'true' }),
+      towers,
+      h('div', { class: 'floor-glow', 'aria-hidden': 'true' })),
+    h('section', { class: 'card colors-card' },
+      h('div', { class: 'card-head' }, h('h2', null, `${year}'in renkleri`), keys.length ? h('small', null, 'En çok uğrayan: ', h('strong', { class: 'gold-text' }, keys[0].label)) : null),
+      keys.length ? [
+        h('div', { class: 'colorbar' }, keys.map(e => h('span', { title: e.label, style: `width:${(totals[e.id] / grand * 100).toFixed(2)}%;background:${e.c}` }))),
+        h('div', { class: 'legend-grid' }, keys.slice(0, 10).map((e, i) => h('div', { class: 'legend-item' },
+          h('span', { class: 'bob', style: `animation-delay:${i * .25}s` }, art(e.id, 46)),
+          h('span', null, h('strong', null, e.label), h('small', null, '%' + Math.round(totals[e.id] / days * 100))))))
+      ] : h('p', { class: 'muted' }, 'Küreler biriktikçe hangi duyguların sana en çok uğradığını burada göreceksin.'))
   );
   shell(content, 'yil');
+}
+
+function dlIcon() {
+  const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  s.setAttribute('width', '18'); s.setAttribute('height', '18'); s.setAttribute('viewBox', '0 0 24 24'); s.setAttribute('aria-hidden', 'true');
+  s.innerHTML = '<path d="M12 4v11M7 10l5 5 5-5M5 20h14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>';
+  return s;
+}
+
+// ---------- indirme penceresi ----------
+
+function exportDialog({ title, size, render, filename, pdfFormat }) {
+  let theme = LS.get('exportTheme') === 'dark' ? 'dark' : 'light';
+  let canvas = null, token = 0;
+  const preview = h('img', { class: 'exp-preview', alt: title + ' önizlemesi' });
+  const status = h('p', { class: 'muted exp-status', role: 'status' }, 'Hazırlanıyor…');
+  const themeSeg = h('div', { class: 'seg', role: 'group', 'aria-label': 'Renk' });
+  const pdfBtn = h('button', { type: 'button', class: 'btn gold' }, dlIcon(), 'PDF indir');
+  const pngBtn = h('button', { type: 'button', class: 'btn' }, dlIcon(), 'Resim (PNG)');
+  const setBusy = b => { pdfBtn.disabled = b; pngBtn.disabled = b; };
+  const paintSeg = () => themeSeg.replaceChildren(...[['light', 'Açık (baskı dostu)'], ['dark', 'Koyu (gece)']].map(([k, label]) =>
+    h('button', { type: 'button', class: theme === k ? 'on' : '', 'aria-pressed': String(theme === k), onClick: () => { theme = k; LS.set('exportTheme', k); paintSeg(); refresh(); } }, label)));
+  async function refresh() {
+    const my = ++token;
+    setBusy(true); status.textContent = 'Hazırlanıyor…'; preview.classList.add('dim');
+    try {
+      const cv = await render(theme, 1);
+      if (my !== token) return;
+      canvas = cv;
+      preview.src = cv.toDataURL('image/jpeg', .82);
+      preview.classList.remove('dim');
+      status.textContent = size + ' · 300 dpi. Yazdırırken "gerçek boyut" seç.';
+      setBusy(false);
+    } catch (ex) { status.textContent = ex.message || 'Sayfa hazırlanamadı.'; }
+  }
+  pdfBtn.addEventListener('click', async () => {
+    setBusy(true); status.textContent = 'PDF hazırlanıyor…';
+    try { download(await toPDF(canvas, pdfFormat), filename + '.pdf'); status.textContent = 'PDF indirildi.'; }
+    catch (ex) { status.textContent = ex.message; }
+    setBusy(false);
+  });
+  pngBtn.addEventListener('click', async () => {
+    setBusy(true);
+    try { download(await toPNG(canvas), filename + '.png'); status.textContent = 'Resim indirildi.'; }
+    catch (ex) { status.textContent = ex.message; }
+    setBusy(false);
+  });
+  const close = () => { token++; dlg.close(); dlg.remove(); };
+  const dlg = h('dialog', { class: 'emo-dialog exp-dialog' },
+    h('div', { class: 'card' },
+      h('div', { class: 'exp-head' }, h('h2', null, title), h('button', { type: 'button', class: 'linkbtn', onClick: close }, 'Kapat')),
+      themeSeg,
+      h('div', { class: 'exp-frame' }, preview),
+      status,
+      h('div', { class: 'dialog-actions' }, pngBtn, pdfBtn)));
+  dlg.addEventListener('cancel', e => { e.preventDefault(); close(); });
+  document.body.append(dlg);
+  paintSeg();
+  dlg.showModal();
+  refresh();
 }
 
 // ---------- ay ----------
@@ -563,7 +687,20 @@ async function viewMonth(mKey) {
             h('a', { class: 'arrow', href: '#/ay/' + nextKey, 'aria-label': 'Sonraki ay' }, '›')),
           h('p', { class: 'muted' }, both ? `${flat.length} küre · ${people.map(p => p.name).join(' ve ')} yan yana`
             : `${mine.length} küre · ${mine.filter(e => e.photo).length} fotoğraf · ${mine.filter(e => e.core).length} core memory`))),
-      h('span', { class: 'hand line' }, MONTH_LINES[mi])
+      h('div', { class: 'month-side' },
+        h('span', { class: 'hand line' }, MONTH_LINES[mi]),
+        h('button', { class: 'btn', onClick: () => {
+          const pr = profile();
+          const own = Object.entries(S.store.cachedYear(pr.id, year) || {}).filter(([d]) => d.startsWith(mKey)).map(([date, e]) => ({ ...e, date })).sort((a, b) => a.date.localeCompare(b.date));
+          exportDialog({
+            title: `${MONTHS[mi]} ${year} özeti`, size: 'A5 · 148 × 210 mm', pdfFormat: 'a5', filename: `ani-kureleri-${mKey}`,
+            render: async (theme, scale) => {
+              const photoSrc = {};
+              for (const e of own.filter(x => x.core && x.photo).slice(0, 3)) { try { photoSrc[e.date] = await S.store.photoURL(e.photo); } catch (er) { /* fotoğrafsız devam */ } }
+              return renderMonth({ year, month, entries: own, profile: pr, theme, photoSrc, scale });
+            }
+          });
+        } }, dlIcon(), 'Ay özetini indir'))
     ),
     divider(season),
     toggle,
@@ -629,6 +766,7 @@ async function viewDay(date) {
 
   // --- sol sayfa: küre, duygular, oranlar ---
   const orbBox = h('div', { class: 'big-orb bob' });
+  const orbStand = h('div', { class: 'orb-stand' }, orbBox, h('div', { class: 'stand-top' }), h('div', { class: 'stand-stem' }));
   const coreBadge = h('span', { class: 'core-badge' }, 'Core Memory');
   const paintOrb = () => {
     orbBox.replaceChildren(orb({ emotions: dr.emotions, core: dr.core, date }, 210, 'today'));
@@ -741,6 +879,14 @@ async function viewDay(date) {
       viewDay(date);
     } catch (ex) { toast(ex.message, 'warn'); }
   } }, 'Küreyi boşalt') : null;
+  const exportBtn = saved ? h('button', { type: 'button', class: 'btn', onClick: () => exportDialog({
+    title: `${longDate(date)} sayfası`, size: 'A6 · 105 × 148 mm (A5’in yarısı)', pdfFormat: 'a6', filename: `ani-kuresi-${date}`,
+    render: async (theme, scale) => {
+      let photoSrc = null;
+      if (saved.photo) { try { photoSrc = await S.store.photoURL(saved.photo); } catch (er) { /* fotoğrafsız devam */ } }
+      return renderDay({ date, entry: saved, profile: p, theme, photoSrc, scale });
+    }
+  }) }, dlIcon(), 'Sayfayı indir') : null;
 
   const content = h('div', { class: 'stack' },
     h('div', { class: 'book' },
@@ -748,7 +894,7 @@ async function viewDay(date) {
         h('div', { class: 'page-head' },
           h('div', null, h('span', { class: 'weekday' }, weekday), h('h1', null, longDate(date))),
           coreBadge),
-        orbBox,
+        orbStand,
         h('h2', null, 'Bugün hangi duygular uğradı?'), chips,
         h('h2', null, 'Oranlar'), sliders,
         coreBtn
@@ -757,7 +903,7 @@ async function viewDay(date) {
         h('span', { class: 'page-icon bob', 'aria-hidden': 'true' }, art('m' + (d.getMonth() + 1), 42)),
         fileIn, photoBox, caption,
         h('label', { for: 'note', class: 'h2' }, 'Günlük'), note,
-        h('div', { class: 'save-row' }, saveBtn, clearBtn)
+        h('div', { class: 'save-row' }, saveBtn, h('div', { class: 'save-side' }, exportBtn, clearBtn))
       )
     ),
     nav
