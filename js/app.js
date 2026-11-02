@@ -880,7 +880,7 @@ async function viewDay(date) {
     } catch (ex) { toast(ex.message, 'warn'); }
   } }, 'Küreyi boşalt') : null;
   const exportBtn = saved ? h('button', { type: 'button', class: 'btn', onClick: () => exportDialog({
-    title: `${longDate(date)} sayfası`, size: 'A6 · 105 × 148 mm (A5’in yarısı)', pdfFormat: 'a6', filename: `ani-kuresi-${date}`,
+    title: `${longDate(date)} sayfası`, size: 'A6 yatay · 148 × 105 mm (A5’in yarısı)', pdfFormat: 'a6l', filename: `ani-kuresi-${date}`,
     render: async (theme, scale) => {
       let photoSrc = null;
       if (saved.photo) { try { photoSrc = await S.store.photoURL(saved.photo); } catch (er) { /* fotoğrafsız devam */ } }

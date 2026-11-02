@@ -1,10 +1,10 @@
-// Basılabilir sayfalar: günlük (A6 dikey), aylık özet (A5), yıllık arşiv (A5).
+// Basılabilir sayfalar: günlük (A6 yatay), aylık özet (A5), yıllık arşiv (A5).
 // Hepsi canvas'a milimetre ölçeğinde çizilir (300 dpi), sonra PNG ya da PDF olarak indirilir.
 import { EMO, SEASON_OF_MONTH, artURL, vineSVG, flourishSVG, svgURL } from './art.js';
 
 const DPI = 300;
 const K = DPI / 25.4;
-export const SIZES = { a6: [105, 148], a5: [148, 210] };
+export const SIZES = { a6: [105, 148], a6l: [148, 105], a5: [148, 210] };
 const MONTHS = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
 const SHORT = ['OCA', 'ŞUB', 'MAR', 'NİS', 'MAY', 'HAZ', 'TEM', 'AĞU', 'EYL', 'EKİ', 'KAS', 'ARA'];
 const WEEKDAYS = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
@@ -321,66 +321,74 @@ function colorBar(ctx, x, y, w, h, list) {
 
 const rotOf = date => (Number(String(date).slice(-2)) * 47) % 360;
 
-// ---------- günlük sayfa (A6 dikey) ----------
+// ---------- günlük sayfa (A6 yatay, web sayfası gibi iki panel) ----------
 
 export async function renderDay({ date, entry, profile, theme = 'light', photoSrc, scale = 1 }) {
   await fontsReady();
   const T = THEMES[theme];
-  const { c, ctx, w, h } = canvasFor('a6', scale);
+  const { c, ctx, w, h } = canvasFor('a6l', scale);
   const d = parse(date);
   const season = SEASON_OF_MONTH[d.getMonth()];
   background(ctx, w, h, theme, Number(date.replace(/-/g, '')));
   await vineStrip(ctx, w, season);
   await corners(ctx, w, h, season);
 
-  text(ctx, WEEKDAYS[(d.getDay() + 6) % 7], 9, 18.5, { font: '700 5px Caveat', color: T.accent });
-  text(ctx, `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`, 9, 26, { font: '600 6.4px Fraunces', color: T.text });
-  if (entry.core) goldPill(ctx, 'Core Memory', w - 8, 16.5);
+  const py = 11, ph = h - py - 8, pw = (w - 16) / 2;
+  const L = 6, R = L + pw + 4;
+  card(ctx, L, py, pw, ph, T, 3.5);
+  card(ctx, R, py, pw, ph, T, 3.5);
 
-  const ox = w / 2, oy = 47, r = 14.5;
-  pedestal(ctx, ox, oy + r + 3, 30, T);
+  // sol panel: tarih, küre, duygular
+  text(ctx, WEEKDAYS[(d.getDay() + 6) % 7], L + 5, py + 7.5, { font: '700 4px Caveat', color: T.accent });
+  text(ctx, `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`, L + 5, py + 13.5, { font: '600 5px Fraunces', color: T.text });
+  if (entry.core) goldPill(ctx, 'Core Memory', L + pw - 4, py + 6.2);
+
+  const ox = L + pw / 2, oy = py + 31, r = 10.5;
+  pedestal(ctx, ox, oy + r + 2.4, 23, T);
   drawOrb(ctx, ox, oy, r, entry.emotions, { core: entry.core, rot: rotOf(date), T });
 
-  // duygular
   const em = emoList(entry.emotions);
   const sum = em.reduce((a, [, v]) => a + v, 0) || 1;
   const shown = em.slice(0, 4);
-  const iw = 21, startX = w / 2 - (shown.length * iw) / 2;
+  const iw = 15, startX = ox - (shown.length * iw) / 2, ey = py + 50;
   for (let i = 0; i < shown.length; i++) {
     const [id, v] = shown[i];
     const cx = startX + i * iw + iw / 2;
-    await character(ctx, id, cx - 4.2, 72, 8.4);
-    text(ctx, EMO[id].label, cx, 84.4, { font: '800 2.4px Nunito', color: T.text, align: 'center' });
-    text(ctx, '%' + Math.round(v / sum * 100), cx, 87.6, { font: '700 2.2px Nunito', color: T.muted, align: 'center' });
+    await character(ctx, id, cx - 3.6, ey, 7.2);
+    text(ctx, EMO[id].label, cx, ey + 10.4, { font: '800 2.1px Nunito', color: T.text, align: 'center' });
+    text(ctx, '%' + Math.round(v / sum * 100), cx, ey + 13.2, { font: '700 1.9px Nunito', color: T.muted, align: 'center' });
   }
-  if (em.length > 4) text(ctx, `+${em.length - 4} duygu`, w / 2, 91, { font: '700 2px Nunito', color: T.muted, align: 'center' });
+  const barY = py + ph - 9;
+  text(ctx, 'Oranlar', L + 5, barY - 1.6, { font: '600 2.6px Fraunces', color: T.text });
+  if (em.length > 4) text(ctx, `+${em.length - 4} duygu daha`, L + pw - 5, barY - 1.6, { font: '700 1.9px Nunito', color: T.muted, align: 'right' });
+  colorBar(ctx, L + 5, barY, pw - 10, 2.2, em.map(([id, v]) => ({ id, share: v / sum })));
 
-  // fotoğraf ve not
-  const top = 94, bottom = h - 9;
-  let noteX = 9, noteW = w - 18;
+  // sağ panel: fotoğraf ve günlük
+  let noteTop = py + 9;
   if (photoSrc) {
-    const pw = 44, ph = 33, fx = 8, fy = top + 1;
+    const fw = 40, fh = 39, fx = R + (pw - fw) / 2, fy = py + 4;
     ctx.save();
-    ctx.translate(fx + (pw + 4) / 2, fy + (ph + 11) / 2); ctx.rotate(-2.5 * Math.PI / 180); ctx.translate(-(fx + (pw + 4) / 2), -(fy + (ph + 11) / 2));
-    ctx.shadowColor = 'rgba(0,0,0,0.35)'; ctx.shadowBlur = 1.6 * ctx.px; ctx.shadowOffsetY = .6 * ctx.px;
-    ctx.fillStyle = '#FFFDF8'; ctx.fillRect(fx, fy, pw + 4, ph + 11);
+    ctx.translate(fx + fw / 2, fy + fh / 2); ctx.rotate(-2.5 * Math.PI / 180); ctx.translate(-(fx + fw / 2), -(fy + fh / 2));
+    ctx.shadowColor = 'rgba(0,0,0,0.35)'; ctx.shadowBlur = 1.4 * ctx.px; ctx.shadowOffsetY = .5 * ctx.px;
+    ctx.fillStyle = '#FFFDF8'; ctx.fillRect(fx, fy, fw, fh);
     ctx.shadowColor = 'transparent';
-    await photo(ctx, photoSrc, fx + 2, fy + 2, pw, ph);
-    ctx.fillStyle = 'rgba(255,170,200,0.55)'; ctx.fillRect(fx + pw / 2 - 6, fy - 1.6, 16, 3.6);
+    await photo(ctx, photoSrc, fx + 2, fy + 2, fw - 4, (fw - 4) * .75);
+    ctx.fillStyle = 'rgba(255,170,200,0.55)'; ctx.fillRect(fx + fw / 2 - 7, fy - 1.5, 14, 3.2);
     if (entry.caption) {
-      const cap = clampLines(ctx, wrap(ctx, entry.caption, pw, '700 3.4px Caveat'), 1, pw);
-      text(ctx, cap[0], fx + 2 + pw / 2, fy + ph + 8, { font: '700 3.4px Caveat', color: '#3A2649', align: 'center' });
+      const cap = clampLines(ctx, wrap(ctx, entry.caption, fw - 4, '700 3.2px Caveat'), 1, fw - 4);
+      text(ctx, cap[0], fx + fw / 2, fy + fh - 2.4, { font: '700 3.2px Caveat', color: '#3A2649', align: 'center' });
     }
     ctx.restore();
-    noteX = 58; noteW = w - noteX - 8;
+    noteTop = fy + fh + 7;
   }
-  const step = 5.4;
-  linedArea(ctx, noteX, top, noteW, bottom - top, step, T);
+  text(ctx, 'Günlük', R + 5, noteTop - 1, { font: '600 3.2px Fraunces', color: T.text });
+  const step = 4.6, nx = R + 5, nw = pw - 10, bottom = py + ph - 3.5;
+  linedArea(ctx, nx, noteTop, nw, bottom - noteTop, step, T);
   if (entry.note) {
-    const font = '700 4.2px Caveat';
-    const maxLines = Math.floor((bottom - top) / step);
-    const lines = clampLines(ctx, wrap(ctx, entry.note, noteW - 1, font), maxLines, noteW - 1);
-    lines.forEach((ln, i) => text(ctx, ln, noteX + .5, top + step * (i + 1) - 1, { font, color: T.ink }));
+    const font = '700 3.6px Caveat';
+    const maxLines = Math.max(1, Math.floor((bottom - noteTop) / step));
+    const lines = clampLines(ctx, wrap(ctx, entry.note, nw - 1, font), maxLines, nw - 1);
+    lines.forEach((ln, i) => text(ctx, ln, nx + .5, noteTop + step * (i + 1) - .9, { font, color: T.ink }));
   }
   footer(ctx, w, h, T, `Anı Küreleri · ${profile.name}`);
   return c;
@@ -620,7 +628,7 @@ function loadJsPDF() {
 export async function toPDF(canvas, fmt) {
   const { jsPDF } = await loadJsPDF();
   const [w, h] = SIZES[fmt];
-  const pdf = new jsPDF({ unit: 'mm', format: fmt, orientation: 'portrait', compress: true });
+  const pdf = new jsPDF({ unit: 'mm', format: fmt === 'a6l' ? 'a6' : fmt, orientation: w > h ? 'landscape' : 'portrait', compress: true });
   pdf.addImage(canvas.toDataURL('image/jpeg', .93), 'JPEG', 0, 0, w, h, undefined, 'FAST');
   return pdf.output('blob');
 }

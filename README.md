@@ -6,7 +6,7 @@ Her gün bir küre, her küre bir anı. Günün duygularını oranlarıyla seçi
 - **On beş duygu karakteri ve kendi duyguların.** Birden fazla duygu seçip oranlarını ayarlayabilirsin. İstediğin kadar yeni duygu (isim, renk, yüz) ekleyebilirsin.
 - **Core Memory.** Özel günler altın halkayla parlar ve ayrı bir rafta toplanır.
 - **Not ve fotoğraf.** Fotoğraflar yüklenirken küçültülür.
-- **Basılabilir sayfalar.** Günlük sayfa A6 (A5'in yarısı), ay özeti ve yıl arşivi A5 olarak PDF ya da PNG indirilebilir. Açık (baskı dostu) ya da koyu renk seçilebilir.
+- **Basılabilir sayfalar.** Günlük sayfa yan yana iki panelli A6 yatay (A5'in yarısı), ay özeti ve yıl arşivi A5 olarak PDF ya da PNG indirilebilir. Açık (baskı dostu) ya da koyu renk seçilebilir.
 - **Dolu bir yıl örneği.** Hesap menüsünden, gerçek veriye dokunmadan 365 küresi dolu bir yılı gezebilirsin.
 - **Birden fazla hesap ve "Birlikte" görünümü.** Her hesap kendi hayvan avatarını seçer. Aynı ayı yan yana görebilirsiniz.
 
