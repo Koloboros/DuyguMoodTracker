@@ -43,15 +43,15 @@ h2, .h2 { font-size: 23px; font-weight: 600; display: block; }
 button { font: inherit; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .art { display: inline-flex; flex: none; line-height: 0; }
-.art svg { overflow: visible; filter: drop-shadow(0 4px 8px rgba(0, 0, 0, .35)); }
+.art svg { overflow: visible; }
 .gold-text { color: var(--gold-soft); }
 .glow-title { text-shadow: 0 0 30px rgba(190, 150, 255, .55); }
 
 /* ---------- gökyüzü: simler, yapraklar, kelebekler ---------- */
 .sky { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
-.sky span { position: absolute; background-size: contain; background-repeat: no-repeat; opacity: 0; animation: twinkle 5s ease-in-out infinite; filter: drop-shadow(0 0 6px var(--glow)); }
+.sky span { position: absolute; background-size: contain; background-repeat: no-repeat; opacity: 0; animation: twinkle 5s ease-in-out infinite; will-change: transform, opacity; }
 .sky i { position: absolute; width: 3px; height: 3px; border-radius: 50%; background: #FFF6DA; box-shadow: 0 0 8px 3px rgba(255, 230, 170, .7); opacity: 0; animation: glitter 4s ease-in-out infinite; }
-.sky .petal { position: absolute; top: -40px; background-size: contain; background-repeat: no-repeat; opacity: .7; animation: fall 22s linear infinite; }
+.sky .petal { position: absolute; top: -40px; background-size: contain; background-repeat: no-repeat; opacity: .7; animation: fall 22s linear infinite; will-change: transform; }
 @keyframes twinkle { 0%, 100% { opacity: 0; transform: scale(.5) rotate(0); } 50% { opacity: .95; transform: scale(1) rotate(25deg); } }
 @keyframes glitter { 0%, 100% { opacity: 0; } 45%, 55% { opacity: .9; } }
 @keyframes fall {

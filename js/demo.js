@@ -1,5 +1,5 @@
 // "Dolu bir yıl" örneği: gerçek repoya hiç dokunmadan, bellekte üretilmiş bir yıl.
-import { Store } from './data.js?v=202611031459';
+import { Store } from './data.js?v=202611031658';
 
 export const DEMO_YEAR = 2025;
 
@@ -124,7 +124,9 @@ export class DemoStore extends Store {
   async loadProfiles() { return this.profiles; }
   async addProfile({ name, animal }) { const p = { id: 'ornek-' + this.profiles.length, name, animal, createdAt: new Date().toISOString(), custom: [] }; this.profiles.push(p); return p; }
   async updateProfile(id, patch) { this.profiles = this.profiles.map(p => p.id === id ? { ...p, ...patch } : p); }
-  async loadYear(pid, year) {
+  async loadYear(pid, year, { force = false } = {}) {
+    const key = pid + '|' + year;
+    if (!force && this.years.has(key)) return this.years.get(key);
     const own = pid === this.profiles[0].id;
     const prefix = String(year);
     const out = own ? Object.fromEntries(Object.entries(this.data).filter(([d]) => d.startsWith(prefix))) : {};
@@ -133,7 +135,7 @@ export class DemoStore extends Store {
   }
   async saveDay(pid, date, entry) {
     if (pid === this.profiles[0].id) { if (entry) this.data[date] = entry; else delete this.data[date]; }
-    return this.loadYear(pid, date.slice(0, 4));
+    return this.loadYear(pid, date.slice(0, 4), { force: true });
   }
   async uploadPhoto(pid, date, blob) { const path = 'local:' + date + Date.now(); this.photos.set(path, URL.createObjectURL(blob)); return path; }
   async deletePhoto(path) { this.photos.delete(path); }

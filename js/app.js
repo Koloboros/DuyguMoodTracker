@@ -1,7 +1,7 @@
-import { EMOTIONS, EMO, ANIMALS, ANIMAL, SEASON_OF_MONTH, EXTRA_FACES, SWATCHES, registerCustom, art, artURL, vineSVG, flourishSVG, dividerSVG, petalSVG, snowSVG, leafFallSVG, blossomSVG, hangingVineSVG, STAR_SVG, svgURL } from './art.js?v=202611031459';
-import { DemoStore, DEMO_YEAR } from './demo.js?v=202611031459';
-import { Repo, Store, shrinkPhoto } from './data.js?v=202611031459';
-import { renderDay, renderMonth, renderYear, toPDF, toPNG, download } from './export.js?v=202611031459';
+import { EMOTIONS, EMO, ANIMALS, ANIMAL, SEASON_OF_MONTH, EXTRA_FACES, SWATCHES, registerCustom, art, artURL, vineSVG, flourishSVG, dividerSVG, petalSVG, snowSVG, leafFallSVG, blossomSVG, hangingVineSVG, STAR_SVG, svgURL } from './art.js?v=202611031658';
+import { DemoStore, DEMO_YEAR } from './demo.js?v=202611031658';
+import { Repo, Store, shrinkPhoto } from './data.js?v=202611031658';
+import { renderDay, renderMonth, renderYear, toPDF, toPNG, download } from './export.js?v=202611031658';
 
 // ---------- küçük yardımcılar ----------
 
@@ -70,7 +70,7 @@ function emoList(entry) {
   return Object.entries(entry.emotions).filter(([id, w]) => EMO[id] && w > 0).sort((a, b) => b[1] - a[1]);
 }
 
-function orbCss(entry, mode) {
+function orbCss(entry, mode, lite = false) {
   const em = emoList(entry);
   if (!em.length && mode === 'glass') {
     return 'background:radial-gradient(circle at 32% 24%, rgba(255,255,255,.7) 0, rgba(255,255,255,.22) 9%, rgba(255,255,255,0) 26%), radial-gradient(circle at 68% 82%, rgba(255,255,255,.2) 0, rgba(255,255,255,0) 28%), radial-gradient(circle at 50% 50%, rgba(255,255,255,.02) 56%, rgba(214,190,255,.16) 88%, rgba(255,255,255,.3) 100%);box-shadow:inset 0 0 0 1px rgba(255,255,255,.16), 0 .06em .2em rgba(6,0,20,.35);';
@@ -92,6 +92,10 @@ function orbCss(entry, mode) {
     const rot = entry.date ? (Number(entry.date.slice(-2)) * 47) % 360 : 30;
     bg = `conic-gradient(from ${rot}deg, ${cols[cols.length - 1]} 0%, ${stops.join(', ')}, ${cols[cols.length - 1]} 100%)`;
   }
+  if (lite) {
+    const sh = entry.core ? `0 0 0 .07em #FFF3C4, 0 0 .8em rgba(255,214,110,.8)` : `0 0 .5em ${cols[0]}A6`;
+    return `background:radial-gradient(circle at 32% 24%, rgba(255,255,255,.95) 0, rgba(255,255,255,.5) 8%, rgba(255,255,255,0) 26%), radial-gradient(circle at 48% 46%, rgba(255,255,255,0) 50%, rgba(18,6,40,.5) 100%), ${bg};box-shadow:${sh};`;
+  }
   let shadow = `0 0 .55em ${cols[0]}B3, 0 .2em .3em rgba(6,0,20,.6), inset 0 0 .22em rgba(255,255,255,.3)`;
   if (entry.core) shadow = `0 0 0 .07em #FFF3C4, 0 0 .9em rgba(255,214,110,.85), ${shadow}`;
   return `background:radial-gradient(circle at 32% 24%, rgba(255,255,255,.98) 0, rgba(255,255,255,.6) 7%, rgba(255,255,255,0) 24%), radial-gradient(circle at 66% 80%, rgba(255,255,255,.45) 0, rgba(255,255,255,0) 26%), radial-gradient(circle at 48% 46%, rgba(255,255,255,0) 52%, rgba(18,6,40,.55) 100%), ${bg};box-shadow:${shadow};`;
@@ -100,7 +104,7 @@ function orbCss(entry, mode) {
 function orb(entry, size, mode) {
   const filled = emoList(entry).length > 0;
   const el = h('span', { class: 'orb' + (filled && size >= 60 ? ' glitter' : '') });
-  el.style.cssText = orbCss(entry, mode);
+  el.style.cssText = orbCss(entry, mode, !size || size < 60);
   if (size) el.style.fontSize = size + 'px';
   return el;
 }
@@ -235,12 +239,14 @@ function shell(content, active, season = SEASON_OF_MONTH[new Date().getMonth()],
   const banner = S.demo ? h('div', { class: 'demo-banner', role: 'note' },
     h('span', null, art('hope', 34), h('span', null, h('strong', null, 'Örnek yıl. '), 'Bu küreler gerçek verin değil; dolu bir yılın nasıl göründüğünü gösterir. Burada yaptığın değişiklikler kaydedilmez.')),
     h('button', { class: 'btn', onClick: exitDemo }, 'Örnekten çık')) : null;
-  app.replaceChildren(vineStrip(season), h('div', { class: 'wrap' }, header, banner, tools ? h('div', { class: 'page-tools' }, tools) : null, content));
+  if (!S.vineEl || S.vineSeason !== season) { S.vineEl = vineStrip(season); S.vineSeason = season; }
+  app.replaceChildren(S.vineEl, h('div', { class: 'wrap' }, header, banner, tools ? h('div', { class: 'page-tools' }, tools) : null, content));
 }
 
 // ---------- örnek yıl ----------
 
 function enterDemo() {
+  viewCache.clear();
   const base = S.store && S.store.profiles.find(p => p.id === S.profileId);
   S.real = { store: S.store, profileId: S.profileId, mode: S.mode };
   S.store = new DemoStore(base ? { ...base } : { id: 'ornek', name: 'Duygu', animal: 'fox', custom: [] });
@@ -253,6 +259,7 @@ function enterDemo() {
 }
 
 function exitDemo() {
+  viewCache.clear();
   const real = S.real || {};
   S.demo = false;
   S.store = real.store || null;
@@ -478,6 +485,17 @@ function viewWho() {
     )));
 }
 
+// Hazırlanmış yıl ve ay ekranlarını bellekte tut: veri değişmediyse geri dönüşte yeniden kurma
+const viewCache = new Map();
+function cachedView(key, deps) {
+  const c = viewCache.get(key);
+  return c && c.deps.length === deps.length && c.deps.every((d, i) => d === deps[i]) && c.today === today() ? c : null;
+}
+function rememberView(key, deps, content, tools, season) {
+  if (viewCache.size > 24) viewCache.delete(viewCache.keys().next().value);
+  viewCache.set(key, { deps, content, tools, season, today: today() });
+}
+
 // ---------- yıl: anı arşivi ----------
 
 const SHORT_M = ['OCA', 'ŞUB', 'MAR', 'NİS', 'MAY', 'HAZ', 'TEM', 'AĞU', 'EYL', 'EKİ', 'KAS', 'ARA'];
@@ -515,9 +533,12 @@ window.addEventListener('scroll', hideTip, { passive: true });
 async function viewYear(year) {
   const p = profile();
   const id = ++S.renderId;
-  shell(loading(), 'yil');
+  if (!S.store.cachedYear(p.id, year)) shell(loading(), 'yil');
   const data = await S.store.loadYear(p.id, year);
   if (id !== S.renderId) return;
+  const vkey = `yil|${p.id}|${year}|${S.demo ? 1 : 0}|${S.store.profiles.length}`;
+  const hit = cachedView(vkey, [data, p]);
+  if (hit) { hideTip(); shell(hit.content, 'yil', undefined, hit.tools); return; }
 
   const t = today();
   const entries = Object.entries(data).map(([date, e]) => ({ ...e, date })).sort((a, b) => a.date.localeCompare(b.date));
@@ -527,43 +548,42 @@ async function viewYear(year) {
 
   // kuleler: her biri bir mevsim, her ay 4 raf × 8 küre
   const COLS = 8;
-  const towers = [0, 1, 2, 3].map(ti => {
-    const months = [0, 1, 2].map(k => {
+  const esc = v => String(v).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+  let towersHTML = '';
+  for (let ti = 0; ti < 4; ti++) {
+    let monthsHTML = '';
+    for (let k = 0; k < 3; k++) {
       const mi = ti * 3 + k;
       const mKey = `${year}-${pad(mi + 1)}`;
       const n = daysIn(year, mi + 1);
-      const rows = [];
+      let rowsHTML = '';
       for (let r0 = 0; r0 < 4; r0++) {
-        const slots = [];
+        let slots = '';
         for (let c = 0; c < COLS; c++) {
           const d = r0 * COLS + c + 1;
-          if (d > n) { slots.push(h('span', { class: 'tslot empty-slot' })); continue; }
+          if (d > n) { slots += '<span class="tslot empty-slot"></span>'; continue; }
           const date = `${mKey}-${pad(d)}`;
           const e = data[date] ? { ...data[date], date } : null;
-          const f = (.7 + .3 * Math.sin(Math.PI * (c + .5) / COLS)) * (e && e.core ? 1.22 : 1);
+          const wave = Math.sin(Math.PI * (c + .5) / COLS);
+          const f = (.7 + .3 * wave) * (e && e.core ? 1.22 : 1);
           const mode = date === t ? 'today' : (date > t ? 'future' : 'empty');
-          const o = orb(e, null, mode);
-          if (e && e.core) o.classList.add('pulse');
-          o.style.setProperty('--f', f.toFixed(3));
-          const attrs = { class: 'tslot', 'data-date': date, 'aria-label': longDate(date), style: `opacity:${(.8 + .2 * Math.sin(Math.PI * (c + .5) / COLS)).toFixed(2)}` };
-          const slot = date > t ? h('span', attrs, o) : h('a', { ...attrs, href: '#/gun/' + date }, o);
-          slot.addEventListener('mouseenter', () => orbTip(slot, e, date));
-          slot.addEventListener('focus', () => orbTip(slot, e, date));
-          slot.addEventListener('mouseleave', hideTip);
-          slot.addEventListener('blur', hideTip);
-          slots.push(slot);
+          const orbHTML = `<span class="orb${e && e.core ? ' pulse' : ''}" style="${esc(orbCss(e, mode, true))}--f:${f.toFixed(3)}"></span>`;
+          const attrs = `class="tslot" data-date="${date}" aria-label="${esc(longDate(date))}" style="opacity:${(.8 + .2 * wave).toFixed(2)}"`;
+          slots += date > t ? `<span ${attrs}>${orbHTML}</span>` : `<a ${attrs} href="#/gun/${date}">${orbHTML}</a>`;
         }
-        rows.push(h('div', { class: 'trow' }, h('div', { class: 'tgrid' }, slots), h('div', { class: 'rail' })));
+        rowsHTML += `<div class="trow"><div class="tgrid">${slots}</div><div class="rail"></div></div>`;
       }
-      return h('div', { class: 'tmonth' }, h('a', { class: 'tlabel', href: '#/ay/' + mKey, 'aria-label': MONTHS[mi] + ' takvimi' }, SHORT_M[mi]), rows);
-    });
-    const body = h('div', { class: 'tower-body' }, months);
-    body.insertAdjacentHTML('afterbegin', TOWER_VINE);
-    return h('div', { class: 'tower' + (ti === 0 || ti === 3 ? ' outer' : '') },
-      h('div', { class: 'tower-cap' }, h('span', { class: 'plaque' }, `${MONTHS[ti * 3].toLocaleUpperCase('tr')} – ${MONTHS[ti * 3 + 2].toLocaleUpperCase('tr')}`)),
-      body,
-      h('div', { class: 'plinth' }));
-  });
+      monthsHTML += `<div class="tmonth"><a class="tlabel" href="#/ay/${mKey}" aria-label="${esc(MONTHS[mi])} takvimi">${SHORT_M[mi]}</a>${rowsHTML}</div>`;
+    }
+    towersHTML += `<div class="tower${ti === 0 || ti === 3 ? ' outer' : ''}"><div class="tower-cap"><span class="plaque">${esc(MONTHS[ti * 3].toLocaleUpperCase('tr'))} – ${esc(MONTHS[ti * 3 + 2].toLocaleUpperCase('tr'))}</span></div><div class="tower-body">${TOWER_VINE}${monthsHTML}</div><div class="plinth"></div></div>`;
+  }
+  const archive = h('section', { class: 'archive', 'aria-label': `${year} anı arşivi` });
+  archive.innerHTML = `<div class="far-wall" aria-hidden="true"></div>${towersHTML}<div class="floor-glow" aria-hidden="true"></div>`;
+  const tipFor = slot => { const date = slot.dataset.date; orbTip(slot, data[date] ? { ...data[date], date } : null, date); };
+  archive.addEventListener('mouseover', ev => { const sl = ev.target.closest('.tslot[data-date]'); if (sl && !sl.contains(ev.relatedTarget)) tipFor(sl); });
+  archive.addEventListener('mouseout', ev => { const sl = ev.target.closest('.tslot[data-date]'); if (sl && !sl.contains(ev.relatedTarget)) hideTip(); });
+  archive.addEventListener('focusin', ev => { const sl = ev.target.closest('.tslot[data-date]'); if (sl) tipFor(sl); });
+  archive.addEventListener('focusout', hideTip);
 
   // core memory kürsüsü
   const shownCores = cores.slice(0, 12);
@@ -597,10 +617,7 @@ async function viewYear(year) {
           h('a', { class: 'arrow', href: '#/yil/' + (year + 1), 'aria-label': 'Sonraki yıl' }, '›')),
         h('p', { class: 'muted' }, `${entries.length} küre · ${photos} fotoğraf · ${cores.length} core memory`)),
       pedestal),
-    h('section', { class: 'archive', 'aria-label': `${year} anı arşivi` },
-      h('div', { class: 'far-wall', 'aria-hidden': 'true' }),
-      towers,
-      h('div', { class: 'floor-glow', 'aria-hidden': 'true' })),
+    archive,
     h('section', { class: 'card colors-card' },
       h('div', { class: 'card-head' }, h('h2', null, `${year}'in renkleri`), keys.length ? h('small', null, 'En çok uğrayan: ', h('strong', { class: 'gold-text' }, keys[0].label)) : null),
       keys.length ? [
@@ -610,6 +627,7 @@ async function viewYear(year) {
           h('span', null, h('strong', null, e.label), h('small', null, '%' + Math.round(totals[e.id] / days * 100))))))
       ] : h('p', { class: 'muted' }, 'Henüz küre yok.'))
   );
+  rememberView(vkey, [data, p], content, exportBtn);
   shell(content, 'yil', undefined, exportBtn);
 }
 
@@ -678,12 +696,16 @@ function exportDialog({ title, size, render, filename, pdfFormat }) {
 async function viewMonth(mKey) {
   const [year, month] = mKey.split('-').map(Number);
   const id = ++S.renderId;
-  shell(loading(), 'ay', SEASON_OF_MONTH[Number(mKey.slice(5, 7)) - 1]);
   const multi = S.store.profiles.length >= 2;
   const both = multi && S.mode === 'both';
   const people = both ? S.store.profiles : [profile()];
+  if (people.some(pr => !S.store.cachedYear(pr.id, year))) shell(loading(), 'ay', SEASON_OF_MONTH[Number(mKey.slice(5, 7)) - 1]);
   const datas = await Promise.all(people.map(pr => S.store.loadYear(pr.id, year)));
   if (id !== S.renderId) return;
+  const vkey = `ay|${mKey}|${S.profileId}|${both ? 1 : 0}|${S.demo ? 1 : 0}`;
+  const deps = [...datas, ...people];
+  const hit = cachedView(vkey, deps);
+  if (hit) { shell(hit.content, 'ay', hit.season, hit.tools); return; }
 
   const t = today();
   const mi = month - 1;
@@ -785,6 +807,7 @@ async function viewMonth(mKey) {
       )
     )
   );
+  rememberView(vkey, deps, content, exportBtn, season);
   shell(content, 'ay', season, exportBtn);
 }
 
@@ -793,8 +816,8 @@ async function viewMonth(mKey) {
 async function viewDay(date) {
   const p = profile();
   const id = ++S.renderId;
-  shell(loading(), 'gun', SEASON_OF_MONTH[Number(date.slice(5, 7)) - 1]);
   const year = Number(date.slice(0, 4));
+  if (!S.store.cachedYear(p.id, year)) shell(loading(), 'gun', SEASON_OF_MONTH[Number(date.slice(5, 7)) - 1]);
   const data = await S.store.loadYear(p.id, year);
   if (id !== S.renderId) return;
 
