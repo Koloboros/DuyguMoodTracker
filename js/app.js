@@ -1,7 +1,7 @@
-import { EMOTIONS, EMO, ANIMALS, ANIMAL, SEASON_OF_MONTH, CUSTOM_FACES, EMOJI_FACES, SWATCHES, registerCustom, art, artURL, vineSVG, flourishSVG, dividerSVG, petalSVG, snowSVG, leafFallSVG, blossomSVG, hangingVineSVG, STAR_SVG, svgURL } from './art.js?v=202611031216';
-import { DemoStore, DEMO_YEAR } from './demo.js?v=202611031216';
-import { Repo, Store, shrinkPhoto } from './data.js?v=202611031216';
-import { renderDay, renderMonth, renderYear, toPDF, toPNG, download } from './export.js?v=202611031216';
+import { EMOTIONS, EMO, ANIMALS, ANIMAL, SEASON_OF_MONTH, EXTRA_FACES, SWATCHES, registerCustom, art, artURL, vineSVG, flourishSVG, dividerSVG, petalSVG, snowSVG, leafFallSVG, blossomSVG, hangingVineSVG, STAR_SVG, svgURL } from './art.js?v=202611031223';
+import { DemoStore, DEMO_YEAR } from './demo.js?v=202611031223';
+import { Repo, Store, shrinkPhoto } from './data.js?v=202611031223';
+import { renderDay, renderMonth, renderYear, toPDF, toPNG, download } from './export.js?v=202611031223';
 
 // ---------- küçük yardımcılar ----------
 
@@ -276,12 +276,11 @@ function divider(season) {
 function customOf(p) { return (p && p.custom) || []; }
 
 function emotionDialog(onDone) {
-  let color = SWATCHES[Math.floor(Math.random() * SWATCHES.length)], face = 'joy';
+  let color = SWATCHES[Math.floor(Math.random() * SWATCHES.length)], face = 'x:' + EXTRA_FACES[0].id;
   const nameIn = h('input', { id: 'cname', type: 'text', maxlength: 22, placeholder: 'ör. Şükran, Merak, Kahve keyfi', required: true, autocomplete: 'off' });
   const preview = h('div', { class: 'emo-preview' });
   const swatches = h('div', { class: 'swatches', role: 'radiogroup', 'aria-label': 'Renk' });
   const faces = h('div', { class: 'faces', role: 'radiogroup', 'aria-label': 'Yüz ifadesi' });
-  const emojis = h('div', { class: 'faces emojis', role: 'radiogroup', 'aria-label': 'Emoji yüzler' });
   let autoName = '';
   const colorIn = h('input', { type: 'color', 'aria-label': 'Başka bir renk', class: 'color-in' });
   const err = h('p', { class: 'err', role: 'alert' });
@@ -289,22 +288,19 @@ function emotionDialog(onDone) {
     registerCustom([...S.store.profiles.flatMap(p => p.custom || []), { id: 'c-onizleme', label: nameIn.value || 'Yeni duygu', c: color, face }]);
     preview.replaceChildren(art('c-onizleme', 96, { className: 'bob' }), h('strong', null, nameIn.value.trim() || 'Yeni duygu'));
     swatches.replaceChildren(...SWATCHES.map(c => h('button', { type: 'button', role: 'radio', 'aria-checked': String(c === color), 'aria-label': c, class: 'swatch' + (c === color ? ' on' : ''), style: `background:${c}`, onClick: () => { color = c; paint(); } })), colorIn);
-    faces.replaceChildren(...CUSTOM_FACES.map(f => {
-      registerCustom([...S.store.profiles.flatMap(p => p.custom || []), { id: 'c-yuz-' + f.id, label: f.label, c: color, face: f.id }]);
-      return h('button', { type: 'button', role: 'radio', 'aria-checked': String(f.id === face), class: 'face' + (f.id === face ? ' on' : ''), onClick: () => { face = f.id; paint(); } }, art('c-yuz-' + f.id, 46), h('span', null, f.label));
-    }));
-    registerCustom([...S.store.profiles.flatMap(p => p.custom || []), ...EMOJI_FACES.map((f, i) => ({ id: 'c-emo-' + i, label: f.label, c: color, face: 'e:' + f.e }))]);
-    emojis.replaceChildren(...EMOJI_FACES.map((f, i) => {
-      const val = 'e:' + f.e;
+    registerCustom([...S.store.profiles.flatMap(p => p.custom || []), ...EXTRA_FACES.map(f => ({ id: 'c-yuz-' + f.id, label: f.label, c: color, face: 'x:' + f.id }))]);
+    faces.replaceChildren(...EXTRA_FACES.map(f => {
+      const val = 'x:' + f.id;
       return h('button', { type: 'button', role: 'radio', 'aria-checked': String(val === face), 'aria-label': f.label, class: 'face' + (val === face ? ' on' : ''), onClick: () => {
         face = val;
         const cur = nameIn.value.trim();
         if (!cur || cur === autoName) { nameIn.value = f.label; autoName = f.label; }
         paint();
-      } }, art('c-emo-' + i, 46), h('span', null, f.label));
+      } }, art('c-yuz-' + f.id, 52), h('span', null, f.label));
     }));
     registerCustom([...S.store.profiles.flatMap(p => p.custom || []), { id: 'c-onizleme', label: nameIn.value || 'Yeni duygu', c: color, face }]);
   };
+  nameIn.value = EXTRA_FACES[0].label; autoName = EXTRA_FACES[0].label;
   colorIn.value = color;
   colorIn.addEventListener('input', () => { color = colorIn.value; paint(); });
   nameIn.addEventListener('input', () => { preview.lastChild.textContent = nameIn.value.trim() || 'Yeni duygu'; });
@@ -328,12 +324,11 @@ function emotionDialog(onDone) {
       } catch (ex) { err.textContent = ex.message; save.disabled = false; }
     } },
       h('h2', null, 'Yeni bir duygu'),
-      h('p', { class: 'muted' }, 'İsmini ver, rengini ve yüzünü seç. Sadece senin hesabında görünür.'),
+      h('p', { class: 'muted' }, 'Bir yüz seç; ismi istersen değiştir.'),
       preview,
-      h('label', { for: 'cname' }, 'İsim'), nameIn,
-      h('span', { class: 'label' }, 'Renk'), swatches,
       h('span', { class: 'label' }, 'Yüz'), faces,
-      h('span', { class: 'label' }, 'Ya da bir emoji'), emojis,
+      h('span', { class: 'label' }, 'Renk'), swatches,
+      h('label', { for: 'cname' }, 'İsim'), nameIn,
       err,
       h('div', { class: 'dialog-actions' }, h('button', { type: 'button', class: 'linkbtn', onClick: () => { registerCustom(S.store.profiles.flatMap(x => x.custom || [])); dlg.close(); dlg.remove(); } }, 'Vazgeç'), save)
     ));

@@ -1,6 +1,6 @@
 // Basılabilir sayfalar: günlük (A6 yatay), aylık özet (A5), yıllık arşiv (A5).
 // Hepsi canvas'a milimetre ölçeğinde çizilir (300 dpi), sonra PNG ya da PDF olarak indirilir.
-import { EMO, SEASON_OF_MONTH, artURL, vineSVG, flourishSVG, svgURL } from './art.js?v=202611031216';
+import { EMO, SEASON_OF_MONTH, artURL, vineSVG, flourishSVG, svgURL } from './art.js?v=202611031223';
 
 const DPI = 300;
 const K = DPI / 25.4;

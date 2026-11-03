@@ -21,13 +21,13 @@ export const EMOTIONS = [
 export const EMO = Object.fromEntries(EMOTIONS.map(e => [e.id, e]));
 
 // Kullanıcının eklediği duygular (profiles.json'da saklanır) EMO'ya kaydedilir.
-// Kendi duygun için klavye emojileri (hazır duygularda olmayanlar)
-export const EMOJI_FACES = [
-  { e: '🥹', label: 'Duygulanma' }, { e: '😌', label: 'Rahatlama' }, { e: '🤗', label: 'Şefkat' },
-  { e: '🥳', label: 'Kutlama' }, { e: '😎', label: 'Özgüven' }, { e: '🤔', label: 'Merak' },
-  { e: '🤯', label: 'Şaşkınlık' }, { e: '😤', label: 'Hırs' }, { e: '🥺', label: 'Kırgınlık' },
-  { e: '😬', label: 'Gerginlik' }, { e: '🫠', label: 'Bunalma' }, { e: '😵‍💫', label: 'Sersemlik' },
-  { e: '🤒', label: 'Hastalık' }, { e: '😇', label: 'Şükran' }, { e: '🤪', label: 'Çılgınlık' }
+// Kendi duygun için yeni çizili yüzler (hazır duygularda olmayanlar)
+export const EXTRA_FACES = [
+  { id: 'duygulanma', label: 'Duygulanma' }, { id: 'rahatlama', label: 'Rahatlama' }, { id: 'sefkat', label: 'Şefkat' },
+  { id: 'kutlama', label: 'Kutlama' }, { id: 'ozguven', label: 'Özgüven' }, { id: 'merak', label: 'Merak' },
+  { id: 'saskinlik', label: 'Şaşkınlık' }, { id: 'hirs', label: 'Hırs' }, { id: 'kirginlik', label: 'Kırgınlık' },
+  { id: 'gerginlik', label: 'Gerginlik' }, { id: 'bunalma', label: 'Bunalma' }, { id: 'sersemlik', label: 'Sersemlik' },
+  { id: 'hastalik', label: 'Hastalık' }, { id: 'sukran', label: 'Şükran' }, { id: 'cilginlik', label: 'Çılgınlık' }
 ];
 
 export const CUSTOM_FACES = [
@@ -149,13 +149,73 @@ const ACC = {
   tired: () => `<path d="M30 38 C34 26 48 18 62 16 C70 15 76 20 80 12 C79 24 72 34 70 37 Z" fill="#8E9AD6"/><path d="M33 34 C40 30 56 28 69 33" stroke="#C6CCF0" stroke-width="3" fill="none"/><circle cx="81" cy="10" r="4.6" fill="#F4F0FF"/>`
 };
 
+// ---------- yeni yüzler: [yüz(e), aksesuar(e)] ----------
+
+const drop = (x, y, sc = 1, c = '#8DB4E2') => `<path transform="translate(${x} ${y}) scale(${sc})" d="M0 0 C-2.5 4 -2.5 7 0 8 C2.5 7 2.5 4 0 0Z" fill="${c}"/>`;
+const spiral = (x, y) => `<path d="M${x} ${y} m-1 0 a1 1 0 1 1 2 0 a2.5 2.5 0 1 1 -5 0 a4 4 0 1 1 8 0 a5.5 5.5 0 1 1 -11 0" stroke="${INK}" stroke-width="2" fill="none" stroke-linecap="round"/>`;
+const shine = (x, y, r) => `<circle cx="${x}" cy="${y}" r="${r}" fill="#fff"/>`;
+
+const XFACES = {
+  duygulanma: [
+    () => eye(38, 60, 'big') + eye(62, 60, 'big') + shine(40, 64, 1.6) + shine(64, 64, 1.6) + drop(31, 66) + drop(69, 66) + stroke('M41 77 Q45.5 81 50 78 Q54.5 81 59 77', 2.6) + blush(.5),
+    () => heart(70, 22, 1.1, '#FF9DB5') + star(30, 24, 4, '#FFF4C2')],
+  rahatlama: [
+    () => stroke('M31 59 Q38 64 45 59', 2.8) + stroke('M55 59 Q62 64 69 59', 2.8) + stroke('M43 76 Q50 81 57 76', 2.6) + blush(.5),
+    () => `<g fill="#F2F6FC" opacity=".85"><circle cx="81" cy="77" r="4"/><circle cx="87" cy="72" r="3"/><circle cx="91" cy="67" r="2"/></g>` + star(28, 24, 4, '#FFF4C2')],
+  sefkat: [
+    e => eye(38, 60, 'closed') + eye(62, 60, 'closed') + `<path d="M42 72 Q50 82 58 72 Q50 76 42 72Z" fill="#7A2E3A"/>` + blush(.6) +
+      heart(50, 87, 1.5, '#FF6F91') + `<ellipse cx="35" cy="88" rx="9" ry="5.5" fill="${e.s}" transform="rotate(25 35 88)"/><ellipse cx="65" cy="88" rx="9" ry="5.5" fill="${e.s}" transform="rotate(-25 65 88)"/>`,
+    () => heart(72, 22, .9, '#FFB3C6') + heart(28, 26, .7, '#FFB3C6')],
+  kutlama: [
+    () => stroke('M32 61 L38 56 L44 61', 2.8) + stroke('M56 61 L62 56 L68 61', 2.8) + `<path d="M39 70 Q50 88 61 70Z" fill="#7A2E3A"/><ellipse cx="50" cy="79" rx="5" ry="3" fill="#F28CA8"/>` + blush(.55),
+    () => `<path d="M38 36 L50 4 L62 34Z" fill="#7FCFB8"/><path d="M42 26 L58 25 M45 17 L55 17" stroke="#FFE08A" stroke-width="3"/><circle cx="50" cy="4" r="4" fill="#FF8FB1"/>` +
+      `<rect x="20" y="20" width="5" height="3" rx="1" fill="#FFD25E" transform="rotate(30 22 21)"/><rect x="76" y="16" width="5" height="3" rx="1" fill="#A8D8F0" transform="rotate(-25 78 17)"/><rect x="80" y="34" width="4" height="3" rx="1" fill="#FF8FB1" transform="rotate(50 82 35)"/><rect x="16" y="38" width="4" height="3" rx="1" fill="#C6B4F0" transform="rotate(10 18 39)"/>`],
+  ozguven: [
+    () => `<path d="M26 54 H47 Q48 66 38 67 Q28 67 26 54Z M53 54 H74 Q72 67 62 67 Q52 66 53 54Z" fill="${INK}"/><path d="M47 56 H53" stroke="${INK}" stroke-width="3"/>` +
+      `<path d="M30 57 L36 57" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".7"/><path d="M57 57 L63 57" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".7"/>` + stroke('M42 78 Q52 81 60 73', 2.8),
+    () => star(74, 20, 7, '#FFE08A') + star(84, 32, 3.5, '#FFF4C2')],
+  merak: [
+    () => eye(38, 61) + eye(62, 59, 'big') + stroke('M30 50 L45 50', 2.6) + stroke('M53 46 Q62 40 71 46', 2.6) + `<ellipse cx="54" cy="78" rx="3.5" ry="3" fill="#7A2E3A"/>`,
+    () => `<path d="M68 10 Q72 4 78 6 Q84 9 80 15 Q76 19 76 24" stroke="#FFE08A" stroke-width="3.4" fill="none" stroke-linecap="round"/><circle cx="76" cy="31" r="2.4" fill="#FFE08A"/>`],
+  saskinlik: [
+    () => eye(37, 59, 'big') + eye(63, 59, 'big') + stroke('M28 45 Q36 40 44 45', 2.4) + stroke('M56 45 Q64 40 72 45', 2.4) + `<ellipse cx="50" cy="80" rx="6" ry="7" fill="#7A2E3A"/>`,
+    () => star(50, 16, 10, '#FFD25E') + star(34, 24, 6, '#FF9F6B') + star(66, 22, 6, '#FF9F6B') + star(50, 30, 3, '#FFF4C2')],
+  hirs: [
+    () => eye(38, 62) + eye(62, 62) + stroke('M28 49 L45 55', 3.6) + stroke('M72 49 L55 55', 3.6) + `<rect x="41" y="74" width="18" height="7" rx="3" fill="#fff" stroke="${INK}" stroke-width="2"/><path d="M47 74 V81 M53 74 V81" stroke="${INK}" stroke-width="1.4"/>`,
+    () => `<g fill="#F2F6FC" opacity=".9"><circle cx="18" cy="44" r="4"/><circle cx="13" cy="38" r="3"/><circle cx="82" cy="44" r="4"/><circle cx="87" cy="38" r="3"/></g>`],
+  kirginlik: [
+    () => eye(37, 61, 'big') + eye(63, 61, 'big') + shine(39, 65, 2) + shine(65, 65, 2) + stroke('M28 49 L43 45', 2.4) + stroke('M57 45 L72 49', 2.4) + stroke('M44 80 Q50 76 56 80', 2.6),
+    () => drop(72, 22, 1.2) + star(28, 24, 3.5, '#DDE1F6')],
+  gerginlik: [
+    () => eye(38, 60, 'big') + eye(62, 60, 'big') + `<rect x="36" y="72" width="28" height="10" rx="4" fill="#fff" stroke="${INK}" stroke-width="2"/><path d="M36 77 H64 M43 72 V82 M50 72 V82 M57 72 V82" stroke="${INK}" stroke-width="1.3"/>`,
+    () => drop(76, 30, 1.4) + drop(24, 36, .9)],
+  bunalma: [
+    e => eye(38, 61, 'lid', e.c) + eye(62, 61, 'lid', e.c) + stroke('M40 77 Q45 73 50 77 T60 77', 2.6) +
+      `<path d="M30 90 Q31 100 34 99 Q37 98 36 90Z M46 96 Q47 106 50 105 Q53 104 52 96Z M62 92 Q63 101 66 100 Q69 99 68 92Z" fill="${e.c}"/>`,
+    () => drop(76, 26, 1.2) + `<path d="M22 28 q4 -4 8 0 t8 0" stroke="#F2F6FC" stroke-width="2" fill="none" stroke-linecap="round"/>`],
+  sersemlik: [
+    () => spiral(38, 61) + spiral(62, 61) + stroke('M40 79 Q45 75 50 79 T60 79', 2.4),
+    () => `<ellipse cx="50" cy="26" rx="22" ry="6" stroke="#FFE08A" stroke-width="1.4" fill="none" stroke-dasharray="3 3"/>` + star(30, 26, 4, '#FFE08A') + star(70, 24, 4.5, '#FFF4C2') + star(52, 20, 3, '#FFD25E')],
+  hastalik: [
+    e => eye(38, 61, 'lid', e.c) + eye(62, 61, 'lid', e.c) + blush(.85, 8) + stroke('M43 78 Q48 76 53 78', 2.4) +
+      `<g transform="rotate(-25 56 77)"><rect x="54" y="74" width="20" height="5" rx="2.5" fill="#fff" stroke="${INK}" stroke-width="1.4"/><circle cx="74" cy="76.5" r="3.6" fill="#FF5E4D" stroke="${INK}" stroke-width="1.4"/></g>`,
+    () => drop(74, 30, 1.1) + `<rect x="34" y="20" width="32" height="10" rx="5" fill="#BFDDF2" opacity=".9"/>`],
+  sukran: [
+    () => eye(38, 60, 'closed') + eye(62, 60, 'closed') + stroke('M42 75 Q50 82 58 75', 2.6) + blush(.65),
+    () => `<ellipse cx="50" cy="22" rx="17" ry="5" stroke="#FFE08A" stroke-width="3.4" fill="none"/>` + star(76, 30, 3.5, '#FFF4C2')],
+  cilginlik: [
+    () => eye(37, 58, 'big') + eye(63, 61) + `<path d="M39 72 Q50 88 61 72Z" fill="#7A2E3A"/><path d="M47 78 Q50 90 56 82 Q55 77 47 78Z" fill="#FF8FB1"/>` + blush(.5),
+    () => `<path d="M70 12 l4 6 l-5 3 l5 5" stroke="#FFE08A" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>` + star(28, 22, 4.5, '#FF9FC6') + star(80, 32, 3, '#FFF4C2')]
+};
+
 function emotionSVG(id) {
   const e = EMO[id], g = uid();
+  const xf = e.face && e.face.startsWith('x:') ? XFACES[e.face.slice(2)] : null;
   const emoji = e.face && e.face.startsWith('e:') ? e.face.slice(2).replace(/[<>&"]/g, '') : null;
-  const face = emoji
+  const face = xf ? () => xf[0](e) : emoji
     ? () => `<text x="50" y="67" text-anchor="middle" dominant-baseline="central" font-size="46" font-family="'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif">${emoji}</text>`
     : (FACES[e.face || id] || FACES.joy);
-  const acc = e.custom ? () => star(73, 21, 7.5, e.l) + star(83, 33, 3.6, '#FFF4C2') + star(28, 24, 4, e.l) : ACC[id];
+  const acc = xf ? () => xf[1](e) : e.custom ? () => star(73, 21, 7.5, e.l) + star(83, 33, 3.6, '#FFF4C2') + star(28, 24, 4, e.l) : ACC[id];
   return `<svg viewBox="0 0 100 104" xmlns="http://www.w3.org/2000/svg">
     <defs><radialGradient id="${g}" cx="36%" cy="30%" r="78%"><stop offset="0" stop-color="${e.l}"/><stop offset=".55" stop-color="${e.c}"/><stop offset="1" stop-color="${e.s}"/></radialGradient></defs>
     <circle cx="50" cy="65" r="39" fill="${e.c}" opacity=".18"/>
