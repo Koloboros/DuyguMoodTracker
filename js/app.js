@@ -767,17 +767,17 @@ async function viewDay(date) {
   const d = parseYmd(date);
   const weekday = WEEKDAYS[weekIdx(d)];
   const season = SEASON_OF_MONTH[d.getMonth()];
-  const nav = h('div', { class: 'day-nav' },
-    h('a', { href: '#/gun/' + addDays(date, -1) }, '‹ ' + shortDate(addDays(date, -1))),
-    h('a', { href: '#/ay/' + date.slice(0, 7) }, MONTHS[d.getMonth()] + ' takvimi'),
-    addDays(date, 1) <= t ? h('a', { href: '#/gun/' + addDays(date, 1) }, shortDate(addDays(date, 1)) + ' ›') : h('span'));
+  const nav = h('nav', { class: 'day-nav', 'aria-label': 'Günler arası geçiş' },
+    h('a', { class: 'btn', href: '#/gun/' + addDays(date, -1), 'aria-label': 'Önceki gün' }, '‹ ' + shortDate(addDays(date, -1))),
+    h('a', { class: 'btn', href: '#/ay/' + date.slice(0, 7) }, MONTHS[d.getMonth()] + ' takvimi'),
+    addDays(date, 1) <= t ? h('a', { class: 'btn', href: '#/gun/' + addDays(date, 1), 'aria-label': 'Sonraki gün' }, shortDate(addDays(date, 1)) + ' ›') : null);
 
   if (date > t) {
     shell(h('div', { class: 'stack' }, h('section', { class: 'card future-card' },
       art('ennui', 88, { className: 'bob' }),
       h('h1', null, longDate(date)),
       h('p', { class: 'lead' }, 'Bu sayfa henüz yazılmadı. O gün geldiğinde küresini boyayabilirsin.'),
-      h('a', { class: 'btn gold', href: '#/gun/' + t }, 'Bugüne dön')), nav), 'gun', season);
+      h('a', { class: 'btn gold', href: '#/gun/' + t }, 'Bugüne dön')), ), 'gun', season, nav);
     return;
   }
 
@@ -931,10 +931,9 @@ async function viewDay(date) {
         h('label', { for: 'note', class: 'h2' }, 'Günlük'), note,
         h('div', { class: 'save-row' }, saveBtn, h('div', { class: 'save-side' }, clearBtn))
       )
-    ),
-    nav
+    )
   );
-  shell(content, 'gun', season, exportBtn);
+  shell(content, 'gun', season, [nav, exportBtn]);
 }
 
 // ---------- yönlendirme ----------

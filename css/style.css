@@ -93,7 +93,8 @@ button { font: inherit; }
 @keyframes sway { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(1.4deg); } }
 @keyframes sway-r { 0%, 100% { transform: scaleX(-1) rotate(0deg); } 50% { transform: scaleX(-1) rotate(1.4deg); } }
 .hung { padding-left: 40px; padding-right: 40px; }
-.page-tools { display: flex; justify-content: flex-end; margin: -12px 0 18px; }
+.page-tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 12px; margin: -12px 0 18px; }
+.page-tools .day-nav { margin-right: auto; }
 .login[data-deco] { padding-top: 64px; }
 .divider { height: 40px; background-repeat: no-repeat; background-position: center; background-size: 320px 40px; margin: -6px 0; opacity: .85; }
 
@@ -317,8 +318,8 @@ input.caption { align-self: center; padding: 0 8px; width: min(100%, 340px); hei
 textarea.lined { width: 100%; min-height: 230px; resize: vertical; padding: 2px 8px; border: 0; border-radius: 12px; background: rgba(10, 4, 30, .35) repeating-linear-gradient(180deg, transparent 0 35px, rgba(214, 190, 255, .18) 35px 36px); font-family: var(--hand); font-size: 26px; line-height: 36px; color: var(--paper-ink); }
 .save-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-top: auto; padding-top: 8px; }
 .save-side { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.day-nav { display: flex; justify-content: space-between; gap: 10px; font-weight: 800; font-size: 16px; }
-.day-nav a { min-height: 44px; display: inline-flex; align-items: center; text-decoration: none; }
+.day-nav { display: flex; flex-wrap: wrap; gap: 8px; }
+.day-nav .btn { min-height: 44px; padding: 0 18px; font-size: 15px; }
 .future-card { align-items: center; text-align: center; padding: 56px 24px; }
 
 /* ---------- pencereler ---------- */
@@ -377,6 +378,9 @@ textarea.lined { width: 100%; min-height: 230px; resize: vertical; padding: 2px 
   .hung { padding-left: 22px; padding-right: 22px; }
   .calendar.hung { padding-left: 14px; padding-right: 14px; }
   .page-tools { margin: -6px 0 14px; }
+  .page-tools .day-nav { width: 100%; display: grid; grid-template-columns: 1fr 1.4fr 1fr; }
+  .day-nav .btn { padding: 0 10px; font-size: 14px; }
+  .page-tools .dl-btn { width: 100%; }
   .card { padding: 20px 18px; border-radius: 24px; }
   .hero { gap: 18px; }
   .pedestal { height: 110px; }
