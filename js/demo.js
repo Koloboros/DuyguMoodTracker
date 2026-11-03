@@ -1,5 +1,5 @@
 // "Dolu bir yıl" örneği: gerçek repoya hiç dokunmadan, bellekte üretilmiş bir yıl.
-import { Store } from './data.js?v=202611031158';
+import { Store } from './data.js?v=202611031216';
 
 export const DEMO_YEAR = 2025;
 

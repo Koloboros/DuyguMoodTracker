@@ -1,7 +1,7 @@
-import { EMOTIONS, EMO, ANIMALS, ANIMAL, SEASON_OF_MONTH, CUSTOM_FACES, SWATCHES, registerCustom, art, artURL, vineSVG, flourishSVG, dividerSVG, petalSVG, snowSVG, leafFallSVG, blossomSVG, hangingVineSVG, STAR_SVG, svgURL } from './art.js?v=202611031158';
-import { DemoStore, DEMO_YEAR } from './demo.js?v=202611031158';
-import { Repo, Store, shrinkPhoto } from './data.js?v=202611031158';
-import { renderDay, renderMonth, renderYear, toPDF, toPNG, download } from './export.js?v=202611031158';
+import { EMOTIONS, EMO, ANIMALS, ANIMAL, SEASON_OF_MONTH, CUSTOM_FACES, EMOJI_FACES, SWATCHES, registerCustom, art, artURL, vineSVG, flourishSVG, dividerSVG, petalSVG, snowSVG, leafFallSVG, blossomSVG, hangingVineSVG, STAR_SVG, svgURL } from './art.js?v=202611031216';
+import { DemoStore, DEMO_YEAR } from './demo.js?v=202611031216';
+import { Repo, Store, shrinkPhoto } from './data.js?v=202611031216';
+import { renderDay, renderMonth, renderYear, toPDF, toPNG, download } from './export.js?v=202611031216';
 
 // ---------- küçük yardımcılar ----------
 
@@ -281,6 +281,8 @@ function emotionDialog(onDone) {
   const preview = h('div', { class: 'emo-preview' });
   const swatches = h('div', { class: 'swatches', role: 'radiogroup', 'aria-label': 'Renk' });
   const faces = h('div', { class: 'faces', role: 'radiogroup', 'aria-label': 'Yüz ifadesi' });
+  const emojis = h('div', { class: 'faces emojis', role: 'radiogroup', 'aria-label': 'Emoji yüzler' });
+  let autoName = '';
   const colorIn = h('input', { type: 'color', 'aria-label': 'Başka bir renk', class: 'color-in' });
   const err = h('p', { class: 'err', role: 'alert' });
   const paint = () => {
@@ -291,6 +293,17 @@ function emotionDialog(onDone) {
       registerCustom([...S.store.profiles.flatMap(p => p.custom || []), { id: 'c-yuz-' + f.id, label: f.label, c: color, face: f.id }]);
       return h('button', { type: 'button', role: 'radio', 'aria-checked': String(f.id === face), class: 'face' + (f.id === face ? ' on' : ''), onClick: () => { face = f.id; paint(); } }, art('c-yuz-' + f.id, 46), h('span', null, f.label));
     }));
+    registerCustom([...S.store.profiles.flatMap(p => p.custom || []), ...EMOJI_FACES.map((f, i) => ({ id: 'c-emo-' + i, label: f.label, c: color, face: 'e:' + f.e }))]);
+    emojis.replaceChildren(...EMOJI_FACES.map((f, i) => {
+      const val = 'e:' + f.e;
+      return h('button', { type: 'button', role: 'radio', 'aria-checked': String(val === face), 'aria-label': f.label, class: 'face' + (val === face ? ' on' : ''), onClick: () => {
+        face = val;
+        const cur = nameIn.value.trim();
+        if (!cur || cur === autoName) { nameIn.value = f.label; autoName = f.label; }
+        paint();
+      } }, art('c-emo-' + i, 46), h('span', null, f.label));
+    }));
+    registerCustom([...S.store.profiles.flatMap(p => p.custom || []), { id: 'c-onizleme', label: nameIn.value || 'Yeni duygu', c: color, face }]);
   };
   colorIn.value = color;
   colorIn.addEventListener('input', () => { color = colorIn.value; paint(); });
@@ -301,7 +314,7 @@ function emotionDialog(onDone) {
       e.preventDefault();
       const label = nameIn.value.trim();
       if (!label) { err.textContent = 'Duyguna bir isim ver.'; return; }
-      const all = [...EMOTIONS, ...Object.values(EMO).filter(x => x.custom && !x.id.startsWith('c-yuz-') && x.id !== 'c-onizleme')];
+      const all = [...EMOTIONS, ...Object.values(EMO).filter(x => x.custom && !/^c-(yuz|emo)-/.test(x.id) && x.id !== 'c-onizleme')];
       if (all.some(x => x.label.toLocaleLowerCase('tr') === label.toLocaleLowerCase('tr'))) { err.textContent = 'Bu isimde bir duygu zaten var.'; return; }
       save.disabled = true;
       try {
@@ -320,6 +333,7 @@ function emotionDialog(onDone) {
       h('label', { for: 'cname' }, 'İsim'), nameIn,
       h('span', { class: 'label' }, 'Renk'), swatches,
       h('span', { class: 'label' }, 'Yüz'), faces,
+      h('span', { class: 'label' }, 'Ya da bir emoji'), emojis,
       err,
       h('div', { class: 'dialog-actions' }, h('button', { type: 'button', class: 'linkbtn', onClick: () => { registerCustom(S.store.profiles.flatMap(x => x.custom || [])); dlg.close(); dlg.remove(); } }, 'Vazgeç'), save)
     ));
@@ -804,7 +818,7 @@ async function viewDay(date) {
   const paintPcts = () => { for (const [eid, el] of Object.entries(pctEls)) if (dr.emotions[eid]) el.textContent = '%' + Math.round(dr.emotions[eid] / sum() * 100); };
   const paintSliders = () => {
     for (const k in pctEls) delete pctEls[k];
-    const sel = Object.values(EMO).filter(e => dr.emotions[e.id] && !e.id.startsWith('c-yuz-') && e.id !== 'c-onizleme');
+    const sel = Object.values(EMO).filter(e => dr.emotions[e.id] && !/^c-(yuz|emo)-/.test(e.id) && e.id !== 'c-onizleme');
     if (!sel.length) { sliders.replaceChildren(h('p', { class: 'muted' }, 'Yukarıdan en az bir duygu seç; sonra burada oranlarını ayarlarsın.')); return; }
     sliders.replaceChildren(...sel.map(e => {
       const pct = h('span', { class: 'pct' });

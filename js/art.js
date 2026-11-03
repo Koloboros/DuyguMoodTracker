@@ -21,6 +21,15 @@ export const EMOTIONS = [
 export const EMO = Object.fromEntries(EMOTIONS.map(e => [e.id, e]));
 
 // Kullanıcının eklediği duygular (profiles.json'da saklanır) EMO'ya kaydedilir.
+// Kendi duygun için klavye emojileri (hazır duygularda olmayanlar)
+export const EMOJI_FACES = [
+  { e: '🥹', label: 'Duygulanma' }, { e: '😌', label: 'Rahatlama' }, { e: '🤗', label: 'Şefkat' },
+  { e: '🥳', label: 'Kutlama' }, { e: '😎', label: 'Özgüven' }, { e: '🤔', label: 'Merak' },
+  { e: '🤯', label: 'Şaşkınlık' }, { e: '😤', label: 'Hırs' }, { e: '🥺', label: 'Kırgınlık' },
+  { e: '😬', label: 'Gerginlik' }, { e: '🫠', label: 'Bunalma' }, { e: '😵‍💫', label: 'Sersemlik' },
+  { e: '🤒', label: 'Hastalık' }, { e: '😇', label: 'Şükran' }, { e: '🤪', label: 'Çılgınlık' }
+];
+
 export const CUSTOM_FACES = [
   { id: 'joy', label: 'Gülümseyen' }, { id: 'calm', label: 'Sakin' }, { id: 'love', label: 'Âşık' },
   { id: 'excite', label: 'Coşkulu' }, { id: 'hope', label: 'Umutlu' }, { id: 'sad', label: 'Hüzünlü' },
@@ -142,7 +151,10 @@ const ACC = {
 
 function emotionSVG(id) {
   const e = EMO[id], g = uid();
-  const face = FACES[e.face || id] || FACES.joy;
+  const emoji = e.face && e.face.startsWith('e:') ? e.face.slice(2).replace(/[<>&"]/g, '') : null;
+  const face = emoji
+    ? () => `<text x="50" y="67" text-anchor="middle" dominant-baseline="central" font-size="46" font-family="'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif">${emoji}</text>`
+    : (FACES[e.face || id] || FACES.joy);
   const acc = e.custom ? () => star(73, 21, 7.5, e.l) + star(83, 33, 3.6, '#FFF4C2') + star(28, 24, 4, e.l) : ACC[id];
   return `<svg viewBox="0 0 100 104" xmlns="http://www.w3.org/2000/svg">
     <defs><radialGradient id="${g}" cx="36%" cy="30%" r="78%"><stop offset="0" stop-color="${e.l}"/><stop offset=".55" stop-color="${e.c}"/><stop offset="1" stop-color="${e.s}"/></radialGradient></defs>
