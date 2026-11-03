@@ -4,7 +4,15 @@
    "id": "duygu-uigl",
    "name": "Duygu",
    "animal": "rabbit",
-   "createdAt": "2026-11-01T20:33:53.957Z"
+   "createdAt": "2026-11-01T20:33:53.957Z",
+   "custom": [
+    {
+     "id": "c-mw0mm1te",
+     "label": "Bunalma",
+     "c": "#cbf0ff",
+     "face": "x:bunalma"
+    }
+   ]
   }
  ]
 }
