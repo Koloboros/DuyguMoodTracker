@@ -1,7 +1,7 @@
-import { EMOTIONS, EMO, ANIMALS, ANIMAL, SEASON_OF_MONTH, EXTRA_FACES, SWATCHES, registerCustom, art, artURL, vineSVG, flourishSVG, dividerSVG, petalSVG, snowSVG, leafFallSVG, blossomSVG, hangingVineSVG, STAR_SVG, svgURL } from './art.js?v=202611031223';
-import { DemoStore, DEMO_YEAR } from './demo.js?v=202611031223';
-import { Repo, Store, shrinkPhoto } from './data.js?v=202611031223';
-import { renderDay, renderMonth, renderYear, toPDF, toPNG, download } from './export.js?v=202611031223';
+import { EMOTIONS, EMO, ANIMALS, ANIMAL, SEASON_OF_MONTH, EXTRA_FACES, SWATCHES, registerCustom, art, artURL, vineSVG, flourishSVG, dividerSVG, petalSVG, snowSVG, leafFallSVG, blossomSVG, hangingVineSVG, STAR_SVG, svgURL } from './art.js?v=202611031459';
+import { DemoStore, DEMO_YEAR } from './demo.js?v=202611031459';
+import { Repo, Store, shrinkPhoto } from './data.js?v=202611031459';
+import { renderDay, renderMonth, renderYear, toPDF, toPNG, download } from './export.js?v=202611031459';
 
 // ---------- küçük yardımcılar ----------
 
@@ -275,6 +275,19 @@ function divider(season) {
 
 function customOf(p) { return (p && p.custom) || []; }
 
+// Gün sayfasındaki duygu çubuğu: sıralı ve kişiye özel. Kaldırılanlar "Yeni duygu" penceresinde durur.
+function allEmotionIds(p) { return [...EMOTIONS.map(e => e.id), ...customOf(p).map(c => c.id)]; }
+function paletteOf(p) {
+  const all = allEmotionIds(p);
+  if (!p || !Array.isArray(p.palette)) return all;
+  return p.palette.filter(id => all.includes(id));
+}
+function hiddenOf(p) { const pal = paletteOf(p); return allEmotionIds(p).filter(id => !pal.includes(id)); }
+async function savePalette(pal) {
+  const p = profile();
+  await S.store.updateProfile(p.id, { palette: pal });
+}
+
 function emotionDialog(onDone) {
   let color = SWATCHES[Math.floor(Math.random() * SWATCHES.length)], face = 'x:' + EXTRA_FACES[0].id;
   const nameIn = h('input', { id: 'cname', type: 'text', maxlength: 22, placeholder: 'ör. Şükran, Merak, Kahve keyfi', required: true, autocomplete: 'off' });
@@ -305,6 +318,19 @@ function emotionDialog(onDone) {
   colorIn.addEventListener('input', () => { color = colorIn.value; paint(); });
   nameIn.addEventListener('input', () => { preview.lastChild.textContent = nameIn.value.trim() || 'Yeni duygu'; });
   const save = h('button', { type: 'submit', class: 'btn gold' }, 'Duyguyu ekle');
+  const hidden = hiddenOf(profile()).map(id => EMO[id]).filter(Boolean);
+  const hiddenBox = hidden.length ? h('div', { class: 'hidden-box' },
+    h('span', { class: 'label' }, 'Kaldırdıkların'),
+    h('div', { class: 'faces' }, hidden.map(e => h('button', { type: 'button', class: 'face', onClick: async () => {
+      try {
+        await savePalette([...paletteOf(profile()), e.id]);
+        registerCustom(S.store.profiles.flatMap(x => x.custom || []));
+        dlg.close(); dlg.remove();
+        toast(`"${e.label}" geri eklendi`);
+        onDone && onDone(e.id);
+      } catch (ex) { err.textContent = ex.message; }
+    } }, art(e.id, 52), h('span', null, e.label)))),
+    h('hr', { class: 'soft' })) : null;
   const dlg = h('dialog', { class: 'emo-dialog' },
     h('form', { method: 'dialog', class: 'card', onSubmit: async e => {
       e.preventDefault();
@@ -316,7 +342,7 @@ function emotionDialog(onDone) {
       try {
         const p = profile();
         const id = 'c-' + Date.now().toString(36);
-        await S.store.updateProfile(p.id, { custom: [...customOf(p), { id, label, c: color, face }] });
+        await S.store.updateProfile(p.id, { custom: [...customOf(p), { id, label, c: color, face }], palette: [...paletteOf(p), id] });
         registerCustom(S.store.profiles.flatMap(x => x.custom || []));
         dlg.close(); dlg.remove();
         toast(`"${label}" duygularına eklendi`);
@@ -324,6 +350,7 @@ function emotionDialog(onDone) {
       } catch (ex) { err.textContent = ex.message; save.disabled = false; }
     } },
       h('h2', null, 'Yeni bir duygu'),
+      hiddenBox,
       h('p', { class: 'muted' }, 'Bir yüz seç; ismi istersen değiştir.'),
       preview,
       h('span', { class: 'label' }, 'Yüz'), faces,
@@ -335,7 +362,6 @@ function emotionDialog(onDone) {
   document.body.append(dlg);
   paint();
   dlg.showModal();
-  nameIn.focus();
 }
 
 function loading() {
@@ -434,7 +460,7 @@ function customSection(p) {
       art(c.id, 48), h('strong', null, c.label),
       h('button', { type: 'button', class: 'linkbtn danger', onClick: async () => {
         if (!confirm(`"${c.label}" silinsin mi? Bu duyguyla boyanmış eski küreler rengini korur ama listede görünmez.`)) return;
-        try { await S.store.updateProfile(cur.id, { custom: customOf(cur).filter(x => x.id !== c.id) }); paint(); } catch (ex) { toast(ex.message, 'warn'); }
+        try { await S.store.updateProfile(cur.id, { custom: customOf(cur).filter(x => x.id !== c.id), palette: paletteOf(cur).filter(id => id !== c.id) }); paint(); } catch (ex) { toast(ex.message, 'warn'); }
       } }, 'Sil'))),
       h('button', { type: 'button', class: 'chip add-chip row', onClick: () => emotionDialog(paint) }, h('span', { class: 'plus', 'aria-hidden': 'true' }, '+'), h('span', null, 'Yeni duygu ekle')));
   };
@@ -825,16 +851,55 @@ async function viewDay(date) {
     }));
     paintPcts();
   };
-  const paintChips = () => chips.replaceChildren(...[...EMOTIONS, ...customOf(p).map(c => EMO[c.id]).filter(Boolean)].map(e => h('button', {
-    type: 'button', class: 'chip' + (dr.emotions[e.id] ? ' on' : ''), 'aria-pressed': String(!!dr.emotions[e.id]),
-    style: dr.emotions[e.id] ? `background:${e.c}33` : '',
-    onClick: () => {
-      if (dr.emotions[e.id]) delete dr.emotions[e.id]; else dr.emotions[e.id] = 30;
-      paintChips(); paintSliders(); paintOrb();
+  let editing = false, draftPal = null;
+  const editBtn = h('button', { type: 'button', class: 'linkbtn edit-pal' }, 'Düzenle');
+  const toggleChip = e => {
+    if (dr.emotions[e.id]) delete dr.emotions[e.id]; else dr.emotions[e.id] = 30;
+    paintChips(); paintSliders(); paintOrb();
+  };
+  const paintChips = () => {
+    const me = profile();
+    if (editing) {
+      chips.replaceChildren(...draftPal.map((id, i) => {
+        const e = EMO[id];
+        if (!e) return null;
+        const move = d => { const j = i + d; if (j < 0 || j >= draftPal.length) return; [draftPal[i], draftPal[j]] = [draftPal[j], draftPal[i]]; paintChips(); };
+        return h('div', { class: 'chip editing' },
+          h('button', { type: 'button', class: 'chip-x', 'aria-label': e.label + ' kaldır', onClick: () => { draftPal.splice(i, 1); paintChips(); } }, '×'),
+          art(e.id, 50), h('span', null, e.label),
+          h('div', { class: 'chip-move' },
+            h('button', { type: 'button', 'aria-label': 'Öne al', disabled: i === 0, onClick: () => move(-1) }, '‹'),
+            h('button', { type: 'button', 'aria-label': 'Sona al', disabled: i === draftPal.length - 1, onClick: () => move(1) }, '›')));
+      }));
+      return;
     }
-  }, art(e.id, 58, { className: dr.emotions[e.id] ? 'bob' : '' }), h('span', null, e.label))),
-    h('button', { type: 'button', class: 'chip add-chip', onClick: () => emotionDialog(id => { dr.emotions[id] = 30; paintChips(); paintSliders(); paintOrb(); }) },
-      h('span', { class: 'plus', 'aria-hidden': 'true' }, '+'), h('span', null, 'Yeni duygu')));
+    const pal = paletteOf(me);
+    const extra = Object.keys(dr.emotions).filter(id => EMO[id] && !pal.includes(id) && !/^c-(yuz|emo|onizleme)/.test(id));
+    chips.replaceChildren(...[...pal, ...extra].map(id => EMO[id]).filter(Boolean).map(e => h('button', {
+      type: 'button', class: 'chip' + (dr.emotions[e.id] ? ' on' : ''), 'aria-pressed': String(!!dr.emotions[e.id]),
+      style: dr.emotions[e.id] ? `background:${e.c}33` : '',
+      onClick: () => toggleChip(e)
+    }, art(e.id, 58, { className: dr.emotions[e.id] ? 'bob' : '' }), h('span', null, e.label))),
+      h('button', { type: 'button', class: 'chip add-chip', onClick: () => emotionDialog(id => { dr.emotions[id] = 30; paintChips(); paintSliders(); paintOrb(); }) },
+        h('span', { class: 'plus', 'aria-hidden': 'true' }, '+'), h('span', null, 'Yeni duygu')));
+  };
+  editBtn.addEventListener('click', async () => {
+    if (!editing) {
+      editing = true; draftPal = paletteOf(profile());
+      editBtn.textContent = 'Bitti'; editBtn.classList.add('on');
+      paintChips();
+      return;
+    }
+    editBtn.disabled = true;
+    try {
+      await savePalette(draftPal);
+      editing = false; editBtn.textContent = 'Düzenle'; editBtn.classList.remove('on');
+      const removed = hiddenOf(profile()).length;
+      toast(removed ? 'Duygular düzenlendi. Kaldırdıkların "Yeni duygu" penceresinde.' : 'Duygular düzenlendi');
+      paintChips();
+    } catch (ex) { toast(ex.message, 'warn'); }
+    editBtn.disabled = false;
+  });
   const coreBtn = h('button', { type: 'button', class: 'btn core-toggle' });
   const paintCore = () => { coreBtn.classList.toggle('gold', dr.core); coreBtn.setAttribute('aria-pressed', String(dr.core)); coreBtn.textContent = dr.core ? 'Core Memory oldu' : 'Core Memory yap'; };
   coreBtn.addEventListener('click', () => { dr.core = !dr.core; paintCore(); paintOrb(); });
@@ -931,7 +996,7 @@ async function viewDay(date) {
           h('div', null, h('span', { class: 'weekday' }, weekday), h('h1', null, longDate(date))),
           coreBadge),
         orbStand,
-        h('h2', null, 'Bugün hangi duygular uğradı?'), chips,
+        h('div', { class: 'chips-head' }, h('h2', null, 'Bugün hangi duygular uğradı?'), editBtn), chips,
         h('h2', null, 'Oranlar'), sliders,
         coreBtn
       ),

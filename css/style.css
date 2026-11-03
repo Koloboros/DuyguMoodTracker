@@ -426,3 +426,15 @@ textarea.lined { width: 100%; min-height: 230px; resize: vertical; padding: 2px 
   .big-orb .orb { font-size: 170px !important; }
   .slider { grid-template-columns: 92px minmax(0, 1fr) 42px; }
 }
+
+/* ---------- duygu çubuğunu düzenleme ---------- */
+.chips-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.edit-pal { flex: none; padding: 6px 14px; min-height: 40px; border: 1px solid var(--line); border-radius: 999px; text-decoration: none; }
+.edit-pal.on { background: linear-gradient(180deg, #FFE7A8, #E9AE45); color: #3B2410; border-color: transparent; }
+.chip.editing { position: relative; cursor: default; border-style: dashed; }
+.chip-x { position: absolute; top: -8px; right: -8px; width: 30px; height: 30px; border-radius: 50%; border: 0; background: #F08A78; color: #3A120C; font-size: 20px; font-weight: 800; line-height: 1; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,.4); }
+.chip-move { display: flex; gap: 6px; margin-top: 2px; }
+.chip-move button { width: 34px; height: 30px; border-radius: 10px; border: 1px solid var(--line); background: rgba(255,255,255,.08); color: #fff; font-size: 18px; font-weight: 800; cursor: pointer; }
+.chip-move button:disabled { opacity: .3; cursor: default; }
+.hidden-box { display: flex; flex-direction: column; gap: 8px; }
+hr.soft { border: 0; border-top: 1px dashed var(--line); margin: 6px 0 0; width: 100%; }
