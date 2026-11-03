@@ -1,7 +1,7 @@
-import { EMOTIONS, EMO, ANIMALS, ANIMAL, SEASON_OF_MONTH, CUSTOM_FACES, SWATCHES, registerCustom, art, artURL, vineSVG, flourishSVG, dividerSVG, petalSVG, snowSVG, leafFallSVG, blossomSVG, hangingVineSVG, STAR_SVG, svgURL } from './art.js';
-import { DemoStore, DEMO_YEAR } from './demo.js';
-import { Repo, Store, shrinkPhoto } from './data.js';
-import { renderDay, renderMonth, renderYear, toPDF, toPNG, download } from './export.js';
+import { EMOTIONS, EMO, ANIMALS, ANIMAL, SEASON_OF_MONTH, CUSTOM_FACES, SWATCHES, registerCustom, art, artURL, vineSVG, flourishSVG, dividerSVG, petalSVG, snowSVG, leafFallSVG, blossomSVG, hangingVineSVG, STAR_SVG, svgURL } from './art.js?v=202611031158';
+import { DemoStore, DEMO_YEAR } from './demo.js?v=202611031158';
+import { Repo, Store, shrinkPhoto } from './data.js?v=202611031158';
+import { renderDay, renderMonth, renderYear, toPDF, toPNG, download } from './export.js?v=202611031158';
 
 // ---------- küçük yardımcılar ----------
 
