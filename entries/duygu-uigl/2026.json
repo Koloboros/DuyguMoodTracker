@@ -34,5 +34,17 @@
   "core": false,
   "photo": "photos/duygu-uigl/2026-11-03-mw1rik4e.jpg",
   "updatedAt": "2026-11-04T06:55:29.268Z"
+ },
+ "2026-11-04": {
+  "emotions": {
+   "longing": 30,
+   "love": 78,
+   "ennui": 12
+  },
+  "note": "",
+  "caption": "",
+  "core": false,
+  "photo": null,
+  "updatedAt": "2026-11-04T19:43:55.531Z"
  }
 }
