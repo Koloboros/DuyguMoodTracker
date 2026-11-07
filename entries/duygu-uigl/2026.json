@@ -58,5 +58,16 @@
   "core": false,
   "photo": null,
   "updatedAt": "2026-11-05T18:06:06.385Z"
+ },
+ "2026-11-07": {
+  "emotions": {
+   "joy": 93,
+   "tired": 30
+  },
+  "note": "",
+  "caption": "",
+  "core": false,
+  "photo": "photos/duygu-uigl/2026-11-07-mw6qc9b7.jpg",
+  "updatedAt": "2026-11-07T18:21:27.052Z"
  }
 }
