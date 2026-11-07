@@ -69,5 +69,17 @@
   "core": false,
   "photo": "photos/duygu-uigl/2026-11-07-mw6qc9b7.jpg",
   "updatedAt": "2026-11-07T18:21:27.052Z"
+ },
+ "2026-11-06": {
+  "emotions": {
+   "tired": 30,
+   "excite": 30,
+   "love": 30
+  },
+  "note": "İş çok yoğundu öğleden sonra durmadan konuştum. Öğle arasında kalp damar kontrolüne gittim. Varis çorabı verdi, kullanması çok zor. Akşam iş için sunum geliştirdim çok eğlenceli geçti. Doğa lila gece uykudan çok uyandı Can devraldı ben biraz uyudum. Yorgun ama güzel bir gündü yine de.",
+  "caption": "",
+  "core": false,
+  "photo": null,
+  "updatedAt": "2026-11-07T18:24:22.450Z"
  }
 }
